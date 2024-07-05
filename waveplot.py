@@ -1,25 +1,26 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import math
+import sys
 
-def wave(A, w, b, o=0, seconds=30):
-    steps = 1000
+def wave(amplitude, damping, angular_freq, freq=None, phase=0.0, seconds=30.0, steps=1000):
     time = np.linspace(0, seconds, steps)
-    displacement = np.zeros_like(time)
-    for t in range(steps):
-        displacement[t] = A * math.pow(math.e, (-1 * b * time[t] / 2)) * math.cos(w * time[t] + o)
+    if freq:
+        angular_freq = 2.0 * np.pi * freq
+    exp = -1.0 * damping / 2.0
+    displacement = amplitude * np.pow(np.e, exp * time) * np.sin((angular_freq * time) + phase)
     return time, displacement
 
-A = 7
-w = 0.8
-b = 0.25
+out_file = sys.argv[1]
 
+a = 7.0
+b = 0.2
+w = 2.0
 
-t, D = wave(A, w, b)
+t, d = wave(amplitude=a, damping=b, angular_freq=w)
 
-plt.plot(t, D)
+plt.plot(t, d)
 plt.xlabel("time (s)")
 plt.ylabel("Amplitude (m)")
-plt.annotate(f"A(0): {A} w: {w} b: {b}", (0.4, 0.9), xycoords="axes fraction") 
+plt.annotate(f"A(0): {a}  omega: {w}  damping: {b}", (0.4, 0.9), xycoords="axes fraction") 
 plt.grid()
-plt.savefig("wave.png")
+plt.savefig(f"{out_file}")
