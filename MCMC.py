@@ -49,7 +49,7 @@ class MCMCModel:
             proposed_likelihood = self.likelihood(noisy_vals, proposed_params)
 
             acceptance_ratio = proposed_likelihood / current_likelihood
-            if acceptance_ratio > np.random.uniform():
+            if acceptance_ratio > np.random.uniform(0.7, 1.0):
                 current_params = proposed_params
                 current_likelihood = proposed_likelihood
 
@@ -57,30 +57,44 @@ class MCMCModel:
 
         return samples
     
+    def thin_samples(self, samples, thin_ratio: float = 0.2, cutoff_start: int = 0):
+        cutoff = samples[cutoff_start:]
+        thinned = np.zeros_like(cutoff)
+        i = 0
+        mod = int(1/thin_ratio)
+        for j in range(cutoff.size):
+            if j % mod == 0:
+                thinned[i] = cutoff[j]
+                i += 1
+        return np.trim_zeros(thinned)
+    
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    from wave_func import wave, mcmc_wave
+    from wave_func import mcmc_wave
     REAL_AMPLITUDE = 6.0
     REAL_DAMPING = 0.3
     REAL_OMEGA = 2.0
     REAL_PHASE = 0.0
-    NOISE_AMPLITUDE = 0.0
-    NUM_ITERATIONS = 10000
+    NOISE_AMPLITUDE = 4.0
+    NUM_ITERATIONS = 100000
+    DATA_STEPS = 10000
+    THIN_RATIO = 0.1
     
-    time, real_wave = wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_OMEGA, phase=REAL_PHASE)
+    time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_OMEGA, steps=DATA_STEPS, return_time=True)
     
     ranges = np.array(
         [
             [0.1, 10.0],    # amplitude (A) range
-            # [0.1, 5.0],     # damping (b) range
-            # [0.1, 50.0],    # angular frequency (omega) range
+            [0.1, 3.0],     # damping (b) range
+            [0.1, 10.0],    # angular frequency (omega) range
             # [0.0, 2*np.pi]  # phase constant range
         ]
     )
-    kwargs = {"seconds": 30.0, "steps": 1000}
+    kwargs = {"seconds": 30.0, "steps": DATA_STEPS, "return_time": False}
 
     model = MCMCModel(function=mcmc_wave, param_ranges=ranges, function_kwargs=kwargs)
     samples = model.metropolis_hastings(real_wave, NUM_ITERATIONS, NOISE_AMPLITUDE)
+    noise = model.generate_noise(real_wave, noise_amp=NOISE_AMPLITUDE)
 
     for i, sample in enumerate(samples):
         current_params = sample
@@ -95,58 +109,67 @@ if __name__ == "__main__":
         print(f"Trial {i+1}: ({acceptance_status})\n{current_params}")
     
     amplitude_samples = samples[:, 0]
-    # damping_samples = samples[:, 1]
-    # angular_freq_samples = samples[:, 2]
+    damping_samples = samples[:, 1]
+    angular_freq_samples = samples[:, 2]
     # phase_samples = samples[:, 3]
     
-    axes = plt.figure(layout="constrained").subplot_mosaic(
+    amplitude_samples = model.thin_samples(amplitude_samples, thin_ratio=THIN_RATIO, cutoff_start=int(NUM_ITERATIONS/10))
+    damping_samples = model.thin_samples(damping_samples, thin_ratio=THIN_RATIO, cutoff_start=int(NUM_ITERATIONS/10))
+    angular_freq_samples = model.thin_samples(angular_freq_samples, thin_ratio=THIN_RATIO, cutoff_start=int(NUM_ITERATIONS/10))
+    
+    mean_amplitude = np.mean(amplitude_samples)
+    mean_damping = np.mean(damping_samples)
+    mean_omega = np.mean(angular_freq_samples)
+    
+    result_wave = mcmc_wave(mean_amplitude, mean_damping, mean_omega, steps=DATA_STEPS)
+
+    figure = plt.figure(figsize=(13, 7), layout="constrained")
+    figure.suptitle("Extracting Signal Parameters From Noise")
+    axes = figure.subplot_mosaic(
     """
-    WN
-    AA
-    """
+    WWN.
+    ABF.
+    """,
+    width_ratios=[1, 1, 1, 0.05]
     )
     
-    axes["W"].plot(time, real_wave)
-    axes["W"].annotate(f"A: {REAL_AMPLITUDE}  b: {REAL_DAMPING}  omega: {REAL_OMEGA}  phase: {REAL_PHASE}", xy=(0.6, 0.9), xycoords="axes fraction")
-    
     axes["A"].hist(amplitude_samples, bins=100, density=True, label="estimated distribution")
-    axes["A"].set_xlabel("amplitude")
-    axes["A"].plot([REAL_AMPLITUDE, REAL_AMPLITUDE], [0.0, 1.0], label = "true value")
-    axes["A"].legend()
+    axes["A"].set_xlabel("Amplitude")
+    ylim = axes["A"].get_ylim()
+    axes["A"].plot([REAL_AMPLITUDE, REAL_AMPLITUDE], [0.0, ylim[1]], label="true value")
+    axes["A"].plot([mean_amplitude, mean_amplitude], [0.0, ylim[1]], label="sample mean")
+    axes["A"].legend(prop={"size": 8})
     
-    # axes["B"].hist(damping_samples, bins=100, density=True, label="estimated distribution")
-    # axes["B"].set_xlabel("damping")
-    # axes["B"].plot([REAL_DAMPING, REAL_DAMPING], [0.0, 1.0], label = "true value")
-    # axes["B"].legend()
+    axes["B"].hist(damping_samples, bins=100, density=True, label="estimated distribution")
+    axes["B"].set_xlabel("Damping")
+    ylim = axes["B"].get_ylim()
+    axes["B"].plot([REAL_DAMPING, REAL_DAMPING], [0.0, ylim[1]], label = "true value")
+    axes["B"].plot([mean_damping, mean_damping], [0.0, ylim[1]], label="sample mean")
+    axes["B"].legend(prop={"size": 8})
     
-    # axes["F"].hist(angular_freq_samples, bins=100, density=True, label="estimated distribution")
-    # axes["F"].set_xlabel("angular frequency (omega)")
-    # axes["F"].plot([REAL_OMEGA, REAL_OMEGA], [0.0, 1.0], label = "true value")
-    # axes["F"].legend()
+    axes["F"].hist(angular_freq_samples, bins=100, density=True, label="estimated distribution")
+    axes["F"].set_xlabel("Angular frequency")
+    ylim = axes["F"].get_ylim()
+    axes["F"].plot([REAL_OMEGA, REAL_OMEGA], [0.0, ylim[1]], label = "true value")
+    axes["F"].plot([mean_omega, mean_omega], [0.0, ylim[1]], label="sample mean")
+    axes["F"].legend(prop={"size": 8})
     
     # axes["P"].hist(phase_samples, bins=100, density=True, label="estimated distribution")
     # axes["P"].set_xlabel("phase constant")
     # axes["P"].plot([REAL_PHASE, REAL_PHASE], [0.0, 1.0], label = "true value")
     # axes["P"].legend()
+        
+    axes["W"].plot(time, real_wave, "r", label="real")
+    axes["W"].set_xlabel("time")
+    axes["W"].annotate(f"Real Parameters:\nAmplitude: {REAL_AMPLITUDE}\nDamping: {REAL_DAMPING}\nAngular Frequency: {REAL_OMEGA}", xy=(0.75, 0.1), xycoords="axes fraction")
+    axes["W"].plot(time, result_wave, "g", label="generated")
+    axes["W"].legend()
     
-    
+    axes["N"].plot(time, noise)
+    axes["N"].set_xlabel("time")
+    axes["N"].annotate(f"Noise amplitude: {NOISE_AMPLITUDE}", xy=(0.3, 0.9), xycoords="axes fraction")
+
     plt.show()
-    # samples_array = np.array(samples)
-    # v_samples = samples_array[:,1]
-    # a_samples = samples_array[:,0]
-    
-    # plt.hist(v_samples, 100, density=True, label = "estimated distribution")
-    # plt.xlabel("velocity")
-    # ylim = plt.ylim()
-    # yx =plt.gca()
-    # plt.plot([-1,-1], ylim, label = "true value")
-    # yx.set_ylim(ylim)
-    # plt.legend()
-    
-    
-    # Pass an array containing any number of parameters that need to be sampled
-    
-    # Pass data that the algorithm will compare against instead of calculating that data itself
     
     
     
