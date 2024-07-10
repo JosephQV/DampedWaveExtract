@@ -10,8 +10,8 @@ NOISE_AMPLITUDE = 1.5
 NUM_ITERATIONS = 1000000
 DATA_STEPS = 10000
 TIMESPAN = 20
-THIN_PERCENTAGE = 0.5 # between 0 and 0.5. (0.5 would use half the returned samples, 0 would use none of them, above 0.5 would use all of them)
-CUTOFF_START = 0.5 # percentage of the samples from the beginning that will be skipped
+THIN_PERCENTAGE = 0.5 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
+CUTOFF_START = 0.2 # percentage of the samples from the beginning that will be skipped
 
 time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ, steps=DATA_STEPS, seconds=TIMESPAN, return_time=True)
 

@@ -63,17 +63,15 @@ class MCMCModel:
         return samples
     
     def thin_samples(self, samples, thin_percentage: float = 0.25, cutoff_percentage: float = 0.2):
+        # Thin percentage: percentage of values from samples to keep after thinning, 0.25 keeps 25% of the values
+        # cutoff percentage: percentage of values from the beginning of samples to skip, 0.2 would start at 20% through the array
         if thin_percentage == 0:
             return np.array([])
-        mod = int(1 / thin_percentage)
         start = int(samples.size * cutoff_percentage)
-        thinned = np.zeros_like(samples)
-        j = 0
-        for i in range(start, samples.size):
-            if i % mod == 0:
-                thinned[j] = samples[i]
-                j += 1
-        return np.trim_zeros(thinned)
+        count = int(thin_percentage * (samples.size - start))
+        indices = self.rng.integers(start, samples.size, count)
+        thinned = samples[indices]
+        return thinned
     
     def print_sample_statuses(self, samples):
         for i, sample in enumerate(samples):
@@ -92,6 +90,9 @@ class MCMCModel:
 if __name__ == "__main__":
     model = MCMCModel(function=mcmc_wave, param_ranges=np.arange(3), function_kwargs={"steps":5, "seconds": 12})
     print(model.likelihood(np.arange(5), [400, 400, 400]))
+    
+    samples = np.arange(100)
+    print(np.sort(model.thin_samples(samples)))
     
     
     
