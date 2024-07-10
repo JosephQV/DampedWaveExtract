@@ -24,8 +24,8 @@ NOISE_AMPLITUDE = np.linspace(0.0, 7.5, 75)
 NUM_ITERATIONS = 10000
 DATA_STEPS = 10000
 TIMESPAN = 20
-THIN_PERCENTAGE = 0.5 # between 0 and 0.5. (0.5 would use half the returned samples, 0 would use none of them, above 0.5 would use all of them)
-CUTOFF_START = 0.5
+THIN_PERCENTAGE = 0.5 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
+CUTOFF_START = 0.2 # percentage of the samples from the beginning that will be skipped
 
 ranges = np.array(
     [
