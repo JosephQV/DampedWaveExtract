@@ -6,11 +6,12 @@ from wave_func import mcmc_wave
 REAL_AMPLITUDE = 7.0
 REAL_DAMPING = 0.3
 REAL_ANGULAR_FREQ = 1.2
-NOISE_AMPLITUDE = 1.5
-NUM_ITERATIONS = 1000000
+NOISE_AMPLITUDE = 1.0
+NOISE_SCALE = 1.0
+NUM_ITERATIONS = 10000
 DATA_STEPS = 10000
 TIMESPAN = 20
-THIN_PERCENTAGE = 0.5 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
+THIN_PERCENTAGE = 0.3 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
 CUTOFF_START = 0.2 # percentage of the samples from the beginning that will be skipped
 
 time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ, steps=DATA_STEPS, seconds=TIMESPAN, return_time=True)
@@ -25,8 +26,8 @@ ranges = np.array(
 kwargs = {"seconds": TIMESPAN, "steps": DATA_STEPS, "return_time": False}
 
 model = MCMCModel(function=mcmc_wave, param_ranges=ranges, function_kwargs=kwargs)
-samples = model.metropolis_hastings(real_wave, NUM_ITERATIONS, NOISE_AMPLITUDE)
-noise = model.generate_noise(real_wave, noise_amp=NOISE_AMPLITUDE)
+samples = model.metropolis_hastings(real_wave, NUM_ITERATIONS, noise_scale=NOISE_SCALE, noise_amplitude=NOISE_AMPLITUDE)
+noise = model.generate_noise(real_wave, scale=NOISE_SCALE, noise_amp=NOISE_AMPLITUDE)
 
 #model.print_sample_statuses(samples)
 
@@ -46,7 +47,7 @@ std_amplitude = np.std(amplitude_samples)
 std_damping = np.std(damping_samples)
 std_angular_freq = np.std(angular_freq_samples)
 
-result_wave = mcmc_wave(mean_amplitude, mean_damping, mean_angular_freq, steps=DATA_STEPS, seconds=TIMESPAN)
+result_wave = mcmc_wave(mean_amplitude, mean_damping, mean_angular_freq, **kwargs)
 figure = plt.figure(figsize=(13, 7), layout="constrained")
 figure.suptitle("Extracting Signal Parameters From Noise")
 axes = figure.subplot_mosaic(

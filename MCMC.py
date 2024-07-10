@@ -8,7 +8,7 @@ class MCMCModel:
         self.function_kwargs = function_kwargs
         self.rng = np.random.default_rng(seed=824)
     
-    def generate_noise(self, data, noise_amp=1.0):
+    def generate_noise(self, data, scale, noise_amp=1.0):
         """
         Generates noisy data by adding random noise.
 
@@ -19,7 +19,7 @@ class MCMCModel:
         Returns:
         - numpy array of noisy data
         """
-        noise = 2 * noise_amp * self.rng.random(size=len(data)) - noise_amp
+        noise = 2 * noise_amp * self.rng.normal(loc=0.0, scale=scale, size=len(data)) - noise_amp
         return data + noise
 
     def compute_rms(self, observed, predicted):
@@ -39,8 +39,8 @@ class MCMCModel:
         likelihood = 1 / (rms_error + tol) 
         return likelihood
 
-    def metropolis_hastings(self, data, num_iterations, noise_amplitude=1.0):
-        noisy_vals = self.generate_noise(data, noise_amplitude)
+    def metropolis_hastings(self, data, num_iterations, noise_scale, noise_amplitude=1.0):
+        noisy_vals = self.generate_noise(data, scale=noise_scale, noise_amp=noise_amplitude)
 
         current_params = self.guess_params()
 
