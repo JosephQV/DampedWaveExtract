@@ -44,7 +44,7 @@ class MCMCModel:
             proposed_likelihood = self.likelihood(noisy_vals, proposed_params)
 
             acceptance_ratio = proposed_likelihood / current_likelihood
-            if acceptance_ratio > np.random.uniform(0.0, 1.0):
+            if acceptance_ratio > np.random.uniform(0.7, 1.0):
                 current_params = proposed_params
                 current_likelihood = proposed_likelihood
 

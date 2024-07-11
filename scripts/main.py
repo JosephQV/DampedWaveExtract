@@ -9,10 +9,10 @@ REAL_ANGULAR_FREQ = 1.2
 NOISE_AMPLITUDE = 0.0
 NOISE_SCALE = 0.0
 NUM_ITERATIONS = 100000
-DATA_STEPS = 1000
+DATA_STEPS = 10000
 TIMESPAN = 20
-THIN_PERCENTAGE = 1.0 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
-CUTOFF_START = 0.2 # percentage of the samples from the beginning that will be skipped
+THIN_PERCENTAGE = 0.7 # between 0 and 1. (0.1 would use 10% of the samples, 1.0 would use all of them)
+CUTOFF_START = 0.3 # percentage of the samples from the beginning that will be skipped
 
 wave_kwargs = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
 time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ, return_time=True, **wave_kwargs)
@@ -63,8 +63,9 @@ axes["A"].set_xlabel("Amplitude")
 ylim = axes["A"].get_ylim()
 axes["A"].plot([REAL_AMPLITUDE, REAL_AMPLITUDE], [0.0, ylim[1]], label="true value")
 axes["A"].plot([mean_amplitude, mean_amplitude], [0.0, ylim[1]], label="sample mean")
-axes["A"].plot([mean_amplitude+std_amplitude, mean_amplitude+std_amplitude], [0.0, ylim[1]], "r--", label="+1 std")
-axes["A"].plot([mean_amplitude-std_amplitude, mean_amplitude-std_amplitude], [0.0, ylim[1]], "r--", label="-1 std")
+if NOISE_AMPLITUDE != 0.0:
+    axes["A"].plot([mean_amplitude+std_amplitude, mean_amplitude+std_amplitude], [0.0, ylim[1]], "r--", label="+1 std")
+    axes["A"].plot([mean_amplitude-std_amplitude, mean_amplitude-std_amplitude], [0.0, ylim[1]], "r--", label="-1 std")
 axes["A"].legend(prop={"size": 8})
 axes["A"].set_xlim(left=ranges[0, 0], right=ranges[0, 1])
 
@@ -74,8 +75,9 @@ axes["B"].set_xlabel("Damping")
 ylim = axes["B"].get_ylim()
 axes["B"].plot([REAL_DAMPING, REAL_DAMPING], [0.0, ylim[1]], label = "true value")
 axes["B"].plot([mean_damping, mean_damping], [0.0, ylim[1]], label="sample mean")
-axes["B"].plot([mean_damping+std_damping, mean_damping+std_damping], [0.0, ylim[1]], "r--", label="+1 std")
-axes["B"].plot([mean_damping-std_damping, mean_damping-std_damping], [0.0, ylim[1]], "r--", label="-1 std")
+if NOISE_AMPLITUDE != 0.0:
+    axes["B"].plot([mean_damping+std_damping, mean_damping+std_damping], [0.0, ylim[1]], "r--", label="+1 std")
+    axes["B"].plot([mean_damping-std_damping, mean_damping-std_damping], [0.0, ylim[1]], "r--", label="-1 std")
 axes["B"].legend(prop={"size": 8})
 axes["B"].set_xlim(left=ranges[1, 0], right=ranges[1, 1])
 
@@ -84,8 +86,9 @@ axes["F"].set_xlabel("Angular frequency")
 ylim = axes["F"].get_ylim()
 axes["F"].plot([REAL_ANGULAR_FREQ, REAL_ANGULAR_FREQ], [0.0, ylim[1]], label = "true value")
 axes["F"].plot([mean_angular_freq, mean_angular_freq], [0.0, ylim[1]], label="sample mean")
-axes["F"].plot([mean_angular_freq+std_angular_freq, mean_angular_freq+std_angular_freq], [0.0, ylim[1]], "r--", label="+1 std")
-axes["F"].plot([mean_angular_freq-std_angular_freq, mean_angular_freq-std_angular_freq], [0.0, ylim[1]], "r--", label="-1 std")
+if NOISE_AMPLITUDE != 0.0:
+    axes["F"].plot([mean_angular_freq+std_angular_freq, mean_angular_freq+std_angular_freq], [0.0, ylim[1]], "r--", label="+1 std")
+    axes["F"].plot([mean_angular_freq-std_angular_freq, mean_angular_freq-std_angular_freq], [0.0, ylim[1]], "r--", label="-1 std")
 axes["F"].legend(prop={"size": 8})
 axes["F"].set_xlim(left=ranges[2, 0], right=ranges[2, 1])
     
