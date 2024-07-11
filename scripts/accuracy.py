@@ -5,7 +5,7 @@ from wave_func import mcmc_wave
 
 def run_trial(model, real_amp, real_damp, real_angf, steps, timespan, thin_percentage, cutoff, num_iterations, noise_amplitude, noise_scale):
     # use given params to make a real wave
-    real_wave = mcmc_wave(real_amp, real_damp, real_angf, seconds=timespan, steps=steps)
+    real_wave = mcmc_wave(real_amp, real_damp, real_angf, **model.function_kwargs)
     # run metropolis hastings for the given number of iterations and given noise
     samples = model.metropolis_hastings(data=real_wave, num_iterations=num_iterations, noise_scale=noise_scale, noise_amplitude=noise_amplitude)
     # get the mean of the samples returned for each parameter, create the wave generated from them
@@ -35,9 +35,9 @@ ranges = np.array(
         [0.1, 10.0],    # angular frequency (omega) range
     ]
 )
-kwargs = {"seconds": TIMESPAN, "steps": DATA_STEPS, "return_time": False}
+wave_kwargs = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
 
-model = MCMCModel(mcmc_wave, param_ranges=ranges, function_kwargs=kwargs)
+model = MCMCModel(mcmc_wave, param_ranges=ranges, function_kwargs=wave_kwargs)
 
 accuracy_by_noise = []
 for noise in NOISE_AMPLITUDE:
@@ -47,7 +47,7 @@ figure = plt.figure()
 axes = figure.add_subplot()
 axes.scatter(NOISE_AMPLITUDE, accuracy_by_noise)
 axes.set_xlabel("Noise Amplitude")
-axes.set_ylabel("Accuracy (RMS)")
-figure.suptitle("Wave Estimation Accuracy as a Function of Noise")
+axes.set_ylabel("Error (RMS)")
+figure.suptitle("Wave Estimation Error as a Function of Noise")
 
 plt.show()

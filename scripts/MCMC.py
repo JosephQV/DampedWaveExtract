@@ -9,16 +9,6 @@ class MCMCModel:
         self.rng = np.random.default_rng(seed=824)
     
     def generate_noise(self, data, scale, noise_amp=1.0):
-        """
-        Generates noisy data by adding random noise.
-
-        Args:
-        - x: numpy array of true values
-        - A: amplitude of noise
-
-        Returns:
-        - numpy array of noisy data
-        """
         noise = 2 * noise_amp * self.rng.normal(loc=0.0, scale=scale, size=len(data)) - noise_amp
         return data + noise
 
@@ -54,7 +44,7 @@ class MCMCModel:
             proposed_likelihood = self.likelihood(noisy_vals, proposed_params)
 
             acceptance_ratio = proposed_likelihood / current_likelihood
-            if acceptance_ratio > np.random.uniform(0.7, 1.0):
+            if acceptance_ratio > np.random.uniform(0.0, 1.0):
                 current_params = proposed_params
                 current_likelihood = proposed_likelihood
 
