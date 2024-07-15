@@ -1,62 +1,104 @@
 import emcee
 import numpy as np
 import matplotlib.pyplot as plt
-from wave_func import mcmc_wave
 
-def generate_noise(data, scale, noise_amp=1.0):
+def emcee_wave(theta, phase=0.0, seconds=30, steps=1000, return_time=False):
+    amplitude, damping, angular_freq = theta
+    time = np.linspace(0, seconds, steps)
+    displacement = amplitude * np.exp(-1.0 * damping / 2.0 * time) * np.sin((angular_freq * time) + phase)
+    if return_time:
+        return time, displacement
+    return displacement
+
+def generate_noise(data: np.ndarray, scale: float, noise_amp: float = 1.0) -> np.ndarray:
     noise = 2 * noise_amp * np.random.normal(loc=0.0, scale=scale, size=len(data)) - noise_amp
     return data + noise
-    
-def compute_rms(observed, predicted):
-    diff = observed - predicted
+
+def guess_params(rng: np.random.Generator, param_ranges: np.ndarray) -> np.ndarray:
+    return rng.uniform(low=param_ranges[:,0], high=param_ranges[:,1], size=len(param_ranges))
+
+def compute_rms(observed: np.ndarray, predicted: np.ndarray) -> float:
+    not_nans = np.where(np.isnan(predicted) == False)
+    diff = observed[not_nans] - predicted[not_nans]
     return np.sqrt(np.mean(diff**2))
-    
-def likelihood(params, **kwargs):
+
+def likelihood(theta: np.ndarray, **kwargs) -> float:
     fcn = kwargs["fcn"]
     noise = kwargs["noise"]
     fcn_kwargs = kwargs["fcn_kwargs"]
     tol = kwargs["tol"]
     
-    trial_vals = eval(fcn.__name__)(*params, **fcn_kwargs)
+    trial_vals = eval(fcn.__name__)(theta, **fcn_kwargs)
     rms_error = compute_rms(noise, trial_vals)
     likelihood = 1 / (rms_error + tol)
+    #print("params:",theta,"kwargs:",kwargs,"rms:",rms_error,"likelihood:",likelihood,sep="\n")
     return likelihood
 
+def mh_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray]:
+    old_likelihoods = np.empty_like(coords)
+    new_likelihoods = np.empty_like(coords)
+    
+    # compute the likelihood of the current positions and of the proposed params (for each walker)
+    for i in range(len(coords)):
+        old_likelihoods[i] = likelihood(coords[i], **likelihood_kwargs)
+        # propose random parameters (for each walker)
+        theta = guess_params(rng, RANGES)
+        new_likelihoods[i] = likelihood(theta, **likelihood_kwargs)
+        coords[i] = theta
+    
+    # return proposed position and the log ratio of the new likelihood to the old likelihood
+    return coords, np.mean(np.log(new_likelihoods) - np.log(old_likelihoods))
+
 if __name__ == "__main__":
+    # -------------------------------------
     REAL_AMPLITUDE = 7.0
     REAL_DAMPING = 0.3
     REAL_ANGULAR_FREQ = 1.2
-    DATA_STEPS = 10000
-    TIMESPAN = 20
+    DATA_STEPS = 1000
+    TIMESPAN = 10
     NOISE_AMPLITUDE = 0.0
     NOISE_SCALE = 0.0
     NDIM = 3
-    NWALKERS = 32
+    NWALKERS = 10
     NUM_ITERATIONS = 10000
+    RANGES = np.array(
+        [
+            [0.1, 10.0],    # amplitude (A) range
+            [0.1, 3.0],     # damping (b) range
+            [0.1, 10.0],    # angular frequency (omega) range
+        ]
+    )
+    WAVE_KWARGS = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
+    # --------------------------------------
     
-    wave_kwargs = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
-    time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ, return_time=True, **wave_kwargs)
+    time, real_wave = emcee_wave([REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ], return_time=True, **WAVE_KWARGS)
     noise = generate_noise(real_wave, NOISE_SCALE, NOISE_AMPLITUDE)
 
     likelihood_kwargs = {
-        "fcn": mcmc_wave,
+        "fcn": emcee_wave,
         "noise": noise,
-        "fcn_kwargs": wave_kwargs,
+        "fcn_kwargs": WAVE_KWARGS,
         "tol": 1e-9
     }
     
     # Prior probabilities for the parameters for each walker
-    p0 = np.random.rand(NWALKERS, NDIM)
-    
-    sampler = emcee.EnsembleSampler(NWALKERS, NDIM, likelihood, kwargs=likelihood_kwargs)
-    # Burn in
-    state = sampler.run_mcmc(p0, 100)
-    sampler.reset()
+    priors = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
+    print(priors)
 
+    metropolis_hastings_move = emcee.moves.MHMove(proposal_function=mh_proposal)
+    sampler = emcee.EnsembleSampler(NWALKERS, NDIM, log_prob_fn=likelihood, kwargs=likelihood_kwargs, moves=[metropolis_hastings_move])
+    
+    # Burn in
+    state = sampler.run_mcmc(priors, 300)
+    sampler.reset()
+    # Actual run
     sampler.run_mcmc(state, NUM_ITERATIONS)
     samples = sampler.get_chain(flat=True)
 
-    print("p0:", p0, "state:", state, "samples:", samples, samples.shape, sep="\n"*2)
+
+
+    # ------------- Plotting ------------------
+    print("p0:", priors, "state:", state, "samples:", samples, samples.shape, sep="\n"*2)
     print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
     print("Mean autocorrelation time: {0:.3f} steps".format(np.mean(sampler.get_autocorr_time())))
     
@@ -72,7 +114,7 @@ if __name__ == "__main__":
     std_damping = np.std(damping_samples)
     std_angular_freq = np.std(angular_freq_samples)
 
-    result_wave = mcmc_wave(mean_amplitude, mean_damping, mean_angular_freq, **wave_kwargs)
+    result_wave = emcee_wave([mean_amplitude, mean_damping, mean_angular_freq], **WAVE_KWARGS)
     figure = plt.figure(figsize=(13, 7), layout="constrained")
     figure.suptitle("(emcee) Extracting Signal Parameters From Noise")
     axes = figure.subplot_mosaic(
@@ -91,8 +133,7 @@ if __name__ == "__main__":
     axes["A"].plot([mean_amplitude+std_amplitude, mean_amplitude+std_amplitude], [0.0, ylim[1]], "r--", label="+1 std")
     axes["A"].plot([mean_amplitude-std_amplitude, mean_amplitude-std_amplitude], [0.0, ylim[1]], "r--", label="-1 std")
     axes["A"].legend(prop={"size": 8})
-    # axes["A"].set_xlim(left=ranges[0, 0], right=ranges[0, 1])
-
+    axes["A"].set_xlim(left=RANGES[0, 0], right=RANGES[0, 1])
 
     axes["B"].hist(damping_samples, bins=100, density=True, label="estimated distribution")
     axes["B"].set_xlabel("Damping")
@@ -102,7 +143,7 @@ if __name__ == "__main__":
     axes["B"].plot([mean_damping+std_damping, mean_damping+std_damping], [0.0, ylim[1]], "r--", label="+1 std")
     axes["B"].plot([mean_damping-std_damping, mean_damping-std_damping], [0.0, ylim[1]], "r--", label="-1 std")
     axes["B"].legend(prop={"size": 8})
-    # axes["B"].set_xlim(left=ranges[1, 0], right=ranges[1, 1])
+    axes["B"].set_xlim(left=RANGES[1, 0], right=RANGES[1, 1])
 
     axes["F"].hist(angular_freq_samples, bins=100, density=True, label="estimated distribution")
     axes["F"].set_xlabel("Angular frequency")
@@ -112,7 +153,7 @@ if __name__ == "__main__":
     axes["F"].plot([mean_angular_freq+std_angular_freq, mean_angular_freq+std_angular_freq], [0.0, ylim[1]], "r--", label="+1 std")
     axes["F"].plot([mean_angular_freq-std_angular_freq, mean_angular_freq-std_angular_freq], [0.0, ylim[1]], "r--", label="-1 std")
     axes["F"].legend(prop={"size": 8})
-    # axes["F"].set_xlim(left=ranges[2, 0], right=ranges[2, 1])
+    axes["F"].set_xlim(left=RANGES[2, 0], right=RANGES[2, 1])
         
     axes["W"].plot(time, real_wave, "r", label="real")
     axes["W"].set_xlabel("time")
