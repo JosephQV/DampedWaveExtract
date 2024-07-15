@@ -49,6 +49,20 @@ def mh_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarra
     # return proposed position and the log ratio of the new likelihood to the old likelihood
     return coords, np.mean(np.log(new_likelihoods) - np.log(old_likelihoods))
 
+def lnlike(theta, noise, yerr, wave_kwargs):
+    return -0.5 * np.sum(((noise - emcee_wave(theta, **wave_kwargs))/yerr) ** 2)
+
+def lnprior(theta, ranges):
+    if np.all(ranges[:,0] < theta) and np.all(theta < ranges[:,1]):
+        return 0.0
+    return -np.inf
+
+def lnprob(theta, noise, yerr, ranges, wave_kwargs):
+    lp = lnprior(theta, ranges)
+    if not np.isfinite(lp):
+        return -np.inf
+    return lp + lnlike(theta, noise, yerr, wave_kwargs)
+    
 if __name__ == "__main__":
     # -------------------------------------
     REAL_AMPLITUDE = 7.0
@@ -59,8 +73,8 @@ if __name__ == "__main__":
     NOISE_AMPLITUDE = 0.0
     NOISE_SCALE = 0.0
     NDIM = 3
-    NWALKERS = 10
-    NUM_ITERATIONS = 10000
+    NWALKERS = 50
+    NUM_ITERATIONS = 100000
     RANGES = np.array(
         [
             [0.1, 10.0],    # amplitude (A) range
@@ -73,29 +87,32 @@ if __name__ == "__main__":
     
     time, real_wave = emcee_wave([REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ], return_time=True, **WAVE_KWARGS)
     noise = generate_noise(real_wave, NOISE_SCALE, NOISE_AMPLITUDE)
-
+    yerr = 0.05 * np.mean(noise)
+    
     likelihood_kwargs = {
         "fcn": emcee_wave,
         "noise": noise,
         "fcn_kwargs": WAVE_KWARGS,
         "tol": 1e-9
     }
+    lnprob_kwargs = {
+        "noise": noise,
+        "yerr": yerr,
+        "ranges": RANGES,
+        "wave_kwargs": WAVE_KWARGS
+    }
     
     # Prior probabilities for the parameters for each walker
     priors = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
-    print(priors)
 
     metropolis_hastings_move = emcee.moves.MHMove(proposal_function=mh_proposal)
-    sampler = emcee.EnsembleSampler(NWALKERS, NDIM, log_prob_fn=likelihood, kwargs=likelihood_kwargs, moves=[metropolis_hastings_move])
+    sampler = emcee.EnsembleSampler(NWALKERS, NDIM, log_prob_fn=lnprob, kwargs=lnprob_kwargs)
     
     # Burn in
     state = sampler.run_mcmc(priors, 300)
     sampler.reset()
     # Actual run
-    sampler.run_mcmc(state, NUM_ITERATIONS)
-    samples = sampler.get_chain(flat=True)
-
-
+    samples, prob, state = sampler.run_mcmc(state, NUM_ITERATIONS)
 
     # ------------- Plotting ------------------
     print("p0:", priors, "state:", state, "samples:", samples, samples.shape, sep="\n"*2)
