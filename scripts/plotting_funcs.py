@@ -82,3 +82,22 @@ def plot_mcmc_wave_results(samples: np.ndarray, real_data: np.ndarray, real_para
     # axes["N"].annotate(f"Noise amplitude: {np.max(noise[int(len(noise) * 0.75):]) - np.mean(noise[int(noise.shape[0] * 0.75)])}", xy=(0.53, 0.9), xycoords="axes fraction")
     
     return figure, axes
+
+def plot_sample_distributions(samples, real, xlabels, ranges):
+    figure = plt.figure(figsize=(13, 7), layout="constrained")
+    figure.suptitle("Probability Distributions for Each Parameter")
+    
+    axes = figure.subplots(2, 2)
+    
+    indices = {
+        0: (0,0),
+        1: (0,1),
+        2: (1,0),
+        3: (1,1)
+    }
+    
+    for parameter in range(samples.shape[1]):
+        p = samples[:, parameter]
+        plot_distribution(axes[indices[parameter]], samples=p, real=real, xlabel=xlabels[parameter], xlim=ranges[parameter])
+    
+    return figure, axes

@@ -1,9 +1,9 @@
 import emcee
 import numpy as np
 import matplotlib.pyplot as plt
-from wave_funcs import emcee_wave
+from wave_funcs import emcee_sine_gaussian_wave
 from utility_funcs import guess_params, generate_noise
-from plotting_funcs import plot_mcmc_wave_results
+from plotting_funcs import plot_sample_distributions
 
 
 def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray]:
@@ -21,10 +21,10 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple
     new_coords = np.empty_like(coords)      # new position vector for each walker
     log_ratios = np.empty(coords.shape[0])  # a ratio for each walker
     for i in range(coords.shape[0]):        # for each walker
-        old_likelihood = gaussian(coords[i], noise, yerr, WAVE_KWARGS)
+        old_likelihood = gaussian(coords[i], noise, yerr, SG_KWARGS)
         # propose new parameters
         theta = guess_params(RANGES, rng)
-        new_likelihood = gaussian(theta, noise, yerr, WAVE_KWARGS)
+        new_likelihood = gaussian(theta, noise, yerr, SG_KWARGS)
         # log ratio of the new likelihood to the old likelihood
         log_ratios[i] = new_likelihood / old_likelihood
         # new position vector in the parameter space
@@ -33,7 +33,7 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple
 
 
 def gaussian(theta: np.ndarray, noise: np.ndarray, yerr: float, wave_kwargs: dict) -> np.float64:
-    return -0.5 * np.sum(((noise - emcee_wave(theta, **wave_kwargs))/yerr) ** 2)
+    return -0.5 * np.sum(((noise - emcee_sine_gaussian_wave(theta, **wave_kwargs))/yerr) ** 2)
 
 
 def log_prior(theta: np.ndarray, ranges: np.ndarray):
@@ -57,34 +57,48 @@ def cov(x, y):
 
     
 if __name__ == "__main__":
-    # -------------------------------------
-    REAL_AMPLITUDE = 7.0
-    REAL_DAMPING = 0.3
-    REAL_ANGULAR_FREQ = 1.2
-    DATA_STEPS = 1000
-    TIMESPAN = 20
-    NOISE_AMPLITUDE = 2.0
-    NOISE_SCALE = 2.0
-    NDIM = 3
-    NWALKERS = 50
-    NUM_ITERATIONS = 10000
+    # Real parameters for the signal
+    REAL_AMPLITUDE = 3.0
+    REAL_ANGULAR_FREQ = 10.0
+    REAL_MEAN = 10.0
+    REAL_DEVIATION = 3.3
+    REAL_THETA = np.array(
+        [REAL_AMPLITUDE, REAL_ANGULAR_FREQ, REAL_MEAN, REAL_DEVIATION]
+    )
+    # Parameter guessing ranges
     RANGES = np.array(
         [
             [0.1, 10.0],    # amplitude (A) range
-            [0.1, 3.0],     # damping (b) range
-            [0.1, 10.0],    # angular frequency (omega) range
+            [0.1, 15.0],     # angular frequency (omega) range
+            [0.1, 20.0],    # mean (m) range
+            [0.1, 15.0]     # deviation (s) range
         ]
     )
-    WAVE_KWARGS = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
-    # ------------------------------------------
-    time, real_wave = emcee_wave([REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ], return_time=True, **WAVE_KWARGS)
+    
+    # Additional arguments to the sine-gaussian function
+    DATA_STEPS = 1000   # data points (i.e length of x array)
+    TIMESPAN = 20       # number of seconds
+    SG_KWARGS = {"seconds": TIMESPAN, "steps": DATA_STEPS}
+    
+    # Noise magnitude
+    NOISE_AMPLITUDE = 2.0
+    NOISE_SCALE = 2.0
+    
+    # emcee parameters
+    NDIM = 4
+    NWALKERS = 50
+    NUM_ITERATIONS = 1000
+    #---------------------------------------------------------------------------------
+    
+    time, real_wave = emcee_sine_gaussian_wave(REAL_THETA, return_time=True, **SG_KWARGS)
     noise = generate_noise(real_wave, NOISE_SCALE, NOISE_AMPLITUDE)
+    
     yerr =  NOISE_AMPLITUDE/REAL_AMPLITUDE
     lnprob_kwargs = {
         "noise": noise,
         "yerr": yerr,
         "ranges": RANGES,
-        "wave_kwargs": WAVE_KWARGS
+        "wave_kwargs": SG_KWARGS
     }
     
     # Prior probabilities for the parameters for each walker
@@ -107,7 +121,8 @@ if __name__ == "__main__":
     samples = sampler.get_chain(flat=True)
     
     # ------------- Plotting ------------------
-    figure, axes = plot_mcmc_wave_results(samples, real_wave, real_params=np.array([REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ]), param_ranges=RANGES, wave_kwargs=WAVE_KWARGS, noise=noise, x=time)
+    
+    fig, axes = plot_sample_distributions(samples, real_wave, ["Amplitude", "Angular Frequence", "Mean", "Deviation"], RANGES)
     plt.show()
 
 

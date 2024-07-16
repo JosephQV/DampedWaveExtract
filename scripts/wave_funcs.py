@@ -20,6 +20,22 @@ def emcee_wave(theta, phase=0.0, seconds=30, steps=1000, return_time=False):
     return displacement
 
 
+def emcee_sine_gaussian_wave(theta, seconds=30, steps=1000, return_time=False):
+    amplitude, omega, mean_time, std_dev = theta
+    time = np.linspace(0, seconds, steps)
+    displacement = amplitude * np.exp(-0.5 * ((time - mean_time) / std_dev) ** 2) * np.sin(omega * time)
+    if return_time:
+        return time, displacement
+    return displacement
+
+
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
     w = mcmc_wave(5, 800, 2.0)
     print(w, w.size)
+    
+    t, s = emcee_sine_gaussian_wave([3.0, 10.0, 10.0, 3.3], seconds=30, return_time=True)
+    
+    plt.plot(t, s)
+    plt.show()
+    
