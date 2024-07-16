@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from MCMC import MCMCModel
-from wave_func import mcmc_wave
+from scripts.wave_funcs import mcmc_wave
 
 def run_trial(model, real_amp, real_damp, real_angf, steps, timespan, thin_percentage, cutoff, num_iterations, noise_amplitude, noise_scale):
     # use given params to make a real wave
