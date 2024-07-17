@@ -48,13 +48,6 @@ def log_probability(theta: np.ndarray, noise: np.ndarray, yerr: float, ranges: n
         return -np.inf
     return lp + gaussian(theta, noise, yerr, wave_kwargs)
 
-
-def cov(x, y):
-    mx = np.mean(x)
-    my = np.mean(y)
-    gm = np.mean((x - mx) * (y - my))  
-    return gm
-
     
 if __name__ == "__main__":
     # -------------------------------------

@@ -1,9 +1,10 @@
+import sys
 import emcee
 import numpy as np
 import matplotlib.pyplot as plt
 from wave_funcs import emcee_sine_gaussian_wave
-from utility_funcs import guess_params, generate_noise
-from plotting_funcs import plot_sample_distributions
+from utility_funcs import guess_params, generate_noise, save_figure
+from plotting_funcs import plot_sample_distributions, plot_real_vs_generated, plot_signal_in_noise
 
 
 def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray]:
@@ -48,13 +49,6 @@ def log_probability(theta: np.ndarray, noise: np.ndarray, yerr: float, ranges: n
         return -np.inf
     return lp + gaussian(theta, noise, yerr, wave_kwargs)
 
-
-def cov(x, y):
-    mx = np.mean(x)
-    my = np.mean(y)
-    gm = np.mean((x - mx) * (y - my))  
-    return gm
-
     
 if __name__ == "__main__":
     # Real parameters for the signal
@@ -81,13 +75,13 @@ if __name__ == "__main__":
     SG_KWARGS = {"seconds": TIMESPAN, "steps": DATA_STEPS}
     
     # Noise magnitude
-    NOISE_AMPLITUDE = 2.0
-    NOISE_SCALE = 2.0
+    NOISE_AMPLITUDE = 4.0
+    NOISE_SCALE = 1.0
     
     # emcee parameters
     NDIM = 4
     NWALKERS = 50
-    NUM_ITERATIONS = 1000
+    NUM_ITERATIONS = 10000
     #---------------------------------------------------------------------------------
     
     time, real_wave = emcee_sine_gaussian_wave(REAL_THETA, return_time=True, **SG_KWARGS)
@@ -114,15 +108,55 @@ if __name__ == "__main__":
     # Actual run
     position, prob, state = sampler.run_mcmc(state, NUM_ITERATIONS)
     
-    print("priors:", priors, "state:", state, "position:", position, "prob:", prob, sep="\n"*2)
-    print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+    # print("priors:", priors, "state:", state, "position:", position, "prob:", prob, sep="\n"*2)
+    # print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
     # print("Mean autocorrelation time: {0:.3f} steps".format(np.mean(sampler.get_autocorr_time())))
     
     samples = sampler.get_chain(flat=True)
     
-    # ------------- Plotting ------------------
+    # ------------- Plotting / Saving ------------------
+    save = False
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "save":
+            save = True
+            
+    fig, axes = plot_sample_distributions(
+        samples=samples, 
+        real_theta=REAL_THETA, 
+        xlabels=["Amplitude", "Angular Frequency", "Mean", "Deviation"], 
+        ranges=RANGES
+    )
+    if save:
+        save_figure(fig, "SineGaussian/SampleDistributions.png")
+    else:
+        plt.show()
     
-    fig, axes = plot_sample_distributions(samples, real_wave, ["Amplitude", "Angular Frequence", "Mean", "Deviation"], RANGES)
-    plt.show()
+    annotation = f"Real Parameters:\n$A = ${REAL_AMPLITUDE}\n$\\omega = ${REAL_ANGULAR_FREQ}\n$\\mu = ${REAL_MEAN}\n$\\sigma = ${REAL_DEVIATION}"
+    fig, axes = plot_real_vs_generated(
+        samples=samples, 
+        real_theta=REAL_THETA, 
+        x=time, 
+        xlabel="time", 
+        wave_kwargs=SG_KWARGS, 
+        wave_fcn=emcee_sine_gaussian_wave,
+        annotation=annotation
+        )
+    if save:
+        save_figure(fig, "SineGaussian/RealVsGenerated.png")
+    else:
+        plt.show()
+    
+    fig, axes = plot_signal_in_noise(
+        noise=noise,
+        real_theta=REAL_THETA,
+        x=time,
+        xlabel="time",
+        wave_kwargs=SG_KWARGS,
+        wave_fcn=emcee_sine_gaussian_wave
+    )
+    if save:
+        save_figure(fig, "SineGaussian/MaskedInNoise.png")
+    else:
+        plt.show()
 
 
