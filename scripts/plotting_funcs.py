@@ -34,7 +34,7 @@ def plot_mcmc_wave_results(samples: np.ndarray, real_data: np.ndarray, real_para
     axes["W"].set_xlabel("time")
     result_wave = emcee_wave([mean_amplitude, mean_damping, mean_angular_freq], **wave_kwargs)
     rms_deviation = compute_rms(real_data, result_wave)
-    axes["W"].annotate(f"Real Parameters:\nAmplitude: {real_params[0]}\nDamping: {real_params[1]}\nAngular Frequency: {real_params[2]}\n\nRMS Deviation: {rms_deviation:.3f}", xy=(0.75, 0.6), xycoords="axes fraction")
+    axes["W"].annotate(f"Real Parameters:\nAmplitude: {real_params[0]}\nDamping: {real_params[1]}\nAngular Frequency: {real_params[2]}\n\nRMS Deviation: {rms_deviation:.3f}", xy=(0.75, 0.60), xycoords="axes fraction")
     axes["W"].plot(x, result_wave, "g", label="generated")
     _fill_within_std(axes["W"], samples, x, wave_kwargs, wave_fcn)
     axes["W"].legend()
@@ -60,7 +60,7 @@ def plot_sample_distributions(samples: np.ndarray, real_theta: np.ndarray, xlabe
         2: (1,0),
         3: (1,1)
     }
-    axes = figure.subplots(2, 2)
+    axes = figure.subplots(2, 2, subplot_kw={"facecolor": "#e3e3e3"})
     
     for p in range(ndim):
         param = samples[:, p]
@@ -77,6 +77,8 @@ def plot_real_vs_generated(samples: np.ndarray, real_theta: np.ndarray, x: np.nd
     
     axes = figure.add_subplot()
     axes.set_xlabel(xlabel)
+    axes.set_facecolor("#e3e3e3")
+    axes.set_ylim(-1*real_theta[0]*2, real_theta[0]*2)
     
     mean_theta = np.mean(samples, axis=0)
     real_data = eval(wave_fcn.__name__)(real_theta, **wave_kwargs)
@@ -84,12 +86,13 @@ def plot_real_vs_generated(samples: np.ndarray, real_theta: np.ndarray, x: np.nd
     rms_deviation = compute_rms(real_data, result_data)
     
     text = f"{annotation}\nError (RMS): {rms_deviation:.3f}"
-    axes.annotate(text, xy=(0.75, 0.6), xycoords="axes fraction")
+    axes.annotate(text, xy=(0.75, 0.70), xycoords="axes fraction")
     
-    _plot_wave(axes, x, wave_fcn, real_theta, wave_kwargs, fmt="r", label="real")    
-    _fill_within_std(axes, samples, x, wave_kwargs, wave_fcn=wave_fcn)
-    _plot_waves_within_std(axes, samples, x, wave_kwargs, wave_fcn=wave_fcn)
-    axes.legend()
+    _plot_wave(axes, x, wave_fcn, real_theta, wave_kwargs, fmt="r", label="real")
+    _plot_wave(axes, x, wave_fcn, mean_theta, wave_kwargs, fmt="g", label="generated")    
+    #_fill_within_std(axes, samples, x, wave_kwargs, wave_fcn=wave_fcn)
+    #_plot_waves_within_std(axes, samples, x, wave_kwargs, wave_fcn=wave_fcn)
+    axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)
 
     return figure, axes
 
@@ -102,10 +105,11 @@ def plot_signal_in_noise(noise: np.ndarray, real_theta: np.ndarray, x: np.ndarra
     
     axes = figure.add_subplot()
     axes.set_xlabel(xlabel)
+    axes.set_facecolor("#e3e3e3")
     
     axes.plot(x, noise, label="noise")
     _plot_wave(axes, x, wave_fcn, real_theta, wave_kwargs, fmt="r", label="real")
-    axes.legend()   
+    axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)   
     
     return figure, axes
 
@@ -132,10 +136,10 @@ def _plot_distribution(axes, samples: np.ndarray, real: np.ndarray, xlabel: str,
     axes.set_xlabel(xlabel)
     ylim = axes.get_ylim()
     axes.plot([real, real], [0.0, ylim[1]], label="true value", color="black")
-    axes.plot([mean, mean], [0.0, ylim[1]], label="sample mean", color="red")
+    axes.plot([mean, mean], [0.0, ylim[1]], label="sample mean", color="green")
     axes.plot([mean+std, mean+std], [0.0, ylim[1]], "r--", label="+-1 std")
     axes.plot([mean-std, mean-std], [0.0, ylim[1]], "r--")
-    axes.legend(prop={"size": 8})
+    axes.legend(loc="upper right", prop={"size": 8}, framealpha=0.5)
     axes.set_xlim(left=xlim[0], right=xlim[1])
 
 
@@ -146,7 +150,7 @@ def _fill_within_std(axes, samples: np.ndarray, x: np.ndarray, wave_kwargs: dict
     above = eval(wave_fcn.__name__)(means+stds, **wave_kwargs)
     below = eval(wave_fcn.__name__)(means-stds, **wave_kwargs)
     
-    axes.fill_between(x, above, below, alpha=0.4, label="within 1 std")
+    axes.fill_between(x, above, below, alpha=0.6, label="within 1 std")
     
 
 def _plot_waves_within_std(axes, samples: np.ndarray, x: np.ndarray, wave_kwargs: dict, wave_fcn, num_lines: int = 300):
@@ -170,5 +174,5 @@ def _plot_waves_within_std(axes, samples: np.ndarray, x: np.ndarray, wave_kwargs
     axes.plot(x, eval(wave_fcn.__name__)(theta, **wave_kwargs), "g-", alpha=0.10)
     
     min_length = min(min_length, num_lines)
-    for theta in range(min_length):
-        axes.plot(x, eval(wave_fcn.__name__)(theta, **wave_kwargs), "g-", alpha=0.01)
+    for i in range(min_length):
+        axes.plot(x, eval(wave_fcn.__name__)(thetas_within_std[i], **wave_kwargs), "g-", alpha=0.01)

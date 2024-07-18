@@ -23,7 +23,7 @@ def emcee_wave(theta, phase=0.0, seconds=30, steps=1000, return_time=False):
 def emcee_sine_gaussian_wave(theta, seconds=30, steps=1000, return_time=False):
     amplitude, omega, mean_time, std_dev = theta
     time = np.linspace(0, seconds, steps)
-    displacement = amplitude * np.exp(-0.5 * ((time - mean_time) ** 2 / std_dev)) * np.sin(omega * time)
+    displacement = amplitude * np.exp(-0.5 * (((time - mean_time) / std_dev) ** 2 )) * np.sin(omega * time)
     if return_time:
         return time, displacement
     return displacement
