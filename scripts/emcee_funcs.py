@@ -1,9 +1,8 @@
 import numpy as np
-from utility_funcs import guess_params
-from wave_funcs import *
+from utility_funcs import guess_params, evaluate_wave_fcn
 
 
-def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, param_ranges: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> tuple[np.ndarray]:
+def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, ranges: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> tuple[np.ndarray]:
     """
     Updates each walker with a new position vector (parameters) and a ratio of the log probability of
     the new position to the old position of each.
@@ -26,7 +25,7 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, param_ra
     for i in range(coords.shape[0]):        # for each walker
         old_likelihood = gaussian(coords[i], noise, yerr, wave_fcn, wave_kwargs)
         # propose new parameters
-        theta = guess_params(param_ranges, rng)
+        theta = guess_params(ranges, rng)
         new_likelihood = gaussian(theta, noise, yerr, wave_fcn, wave_kwargs)
         # log ratio of the new likelihood to the old likelihood
         log_ratios[i] = new_likelihood / old_likelihood
@@ -36,7 +35,7 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, param_ra
 
 
 def gaussian(theta: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> np.float64:
-    wave = eval(wave_fcn.__name__)(theta, **wave_kwargs)
+    wave = evaluate_wave_fcn(wave_fcn, theta, wave_kwargs)
     return -0.5 * np.sum(((noise - wave)/yerr) ** 2)
 
 

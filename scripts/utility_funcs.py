@@ -1,5 +1,11 @@
 import numpy as np
 import pathlib
+from wave_funcs import *
+
+
+def evaluate_wave_fcn(wave_fcn, theta: np.ndarray, wave_kwargs: dict) -> np.ndarray:
+    return eval(wave_fcn.__name__)(theta, **wave_kwargs)
+
 
 def generate_noise(data: np.ndarray, scale: float, noise_amp: float = 1.0) -> np.ndarray:
     noise = 2 * noise_amp * np.random.normal(loc=0.0, scale=scale, size=len(data)) - noise_amp
