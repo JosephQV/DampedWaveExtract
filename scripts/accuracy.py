@@ -3,6 +3,7 @@ import numpy as np
 from MCMC import MCMCModel
 from scripts.wave_funcs import mcmc_wave
 
+
 def run_trial(model, real_amp, real_damp, real_angf, steps, timespan, thin_percentage, cutoff, num_iterations, noise_amplitude, noise_scale):
     # use given params to make a real wave
     real_wave = mcmc_wave(real_amp, real_damp, real_angf, **model.function_kwargs)
@@ -16,6 +17,7 @@ def run_trial(model, real_amp, real_damp, real_angf, steps, timespan, thin_perce
     # find the rms between the real and generated waves
     rms = model.compute_rms(observed=real_wave, predicted=generated_wave)
     return rms
+
 
 REAL_AMPLITUDE = 7.0
 REAL_DAMPING = 0.3

@@ -1,4 +1,10 @@
 import numpy as np
+import pathlib
+from wave_funcs import *
+
+
+def evaluate_wave_fcn(wave_fcn, theta: np.ndarray, wave_kwargs: dict) -> np.ndarray:
+    return eval(wave_fcn.__name__)(theta, **wave_kwargs)
 
 
 def generate_noise(data: np.ndarray, scale: float, noise_amp: float = 1.0) -> np.ndarray:
@@ -50,3 +56,17 @@ def thin_samples(samples: np.ndarray, thin_percentage: float = 0.25, cutoff_perc
     count = int(thin_percentage * (samples.size - start))
     indices = np.random.randint(start, samples.size, count)
     return samples[indices]
+
+
+def save_figure(figure, name: str):
+    loc = pathlib.Path.cwd().parent.joinpath(f"figures/{name}")
+    figure.savefig(loc)
+
+
+if __name__ == "__main__":
+    print(__file__)
+    import matplotlib.pyplot as plt
+    data = np.zeros(1000)
+    noise = generate_noise(data, 1.5, 5.0)
+    plt.plot(np.linspace(0, 30, 1000), noise)
+    plt.show()
