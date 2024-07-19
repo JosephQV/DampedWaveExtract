@@ -3,12 +3,21 @@ import pathlib
 from wave_funcs import *
 
 
-def evaluate_wave_fcn(wave_fcn, theta: np.ndarray, wave_kwargs: dict) -> np.ndarray:
+def evaluate_wave_fcn(wave_fcn, theta: np.ndarray, wave_kwargs: dict, return_time: bool = False) -> np.ndarray:
+    if return_time == True:
+        wave_kwargs.update({"return_time": return_time})
+        time, wave = eval(wave_fcn.__name__)(theta, **wave_kwargs)
+        wave_kwargs.pop("return_time")
+        return time, wave
     return eval(wave_fcn.__name__)(theta, **wave_kwargs)
 
 
-def generate_noise(data: np.ndarray, scale: float, noise_amp: float = 1.0) -> np.ndarray:
-    noise = 2 * noise_amp * np.random.normal(loc=0.0, scale=scale, size=len(data)) - noise_amp
+def generate_noise(data: np.ndarray, snr: float) -> np.ndarray:
+    snr = max(snr, 0.01)
+    ev_signal = np.mean(data ** 2)  # Expected value of signal variable
+    ev_noise = ev_signal / snr      # Expected value of noise = EV(signal ** 2) / Signal to noise ratio (SNR)
+    
+    noise =  np.random.normal(loc=0.0, scale=ev_noise, size=len(data))
     return data + noise
 
 
@@ -64,9 +73,27 @@ def save_figure(figure, name: str):
 
 
 if __name__ == "__main__":
-    print(__file__)
     import matplotlib.pyplot as plt
-    data = np.zeros(1000)
-    noise = generate_noise(data, 1.5, 5.0)
-    plt.plot(np.linspace(0, 30, 1000), noise)
+    from plotting_funcs import FACECOLOR
+    
+    axes = plt.subplot(111)
+    steps = 1000
+    time = np.linspace(0, 60, steps)
+    data = np.sin(time)
+    
+    SNRs = [1.00, 0.50, 0.25, 0.125]
+    colors = ["#58fcc3", "#48cefa", "#faa823", "#fc654e"]
+    
+    splits = len(SNRs)
+    for i in range(splits):
+        part = int(steps / splits)
+        noise = generate_noise(data[i * part : i * part + part], snr=SNRs[i])
+        axes.plot(time[i * part : i * part + part], noise, color=colors[i % len(colors)], label=f"SNR: {SNRs[i]}")
+
+    axes.plot(time, data, color="black", label="Ex. signal", alpha=0.6)
+    axes.legend(loc="upper left", prop={"size": 12})
+    axes.set_xlabel("time")
+    axes.set_facecolor(FACECOLOR)
+    axes.grid()
+    plt.title("Some Signal to Noise Ratios (SNR)", fontdict={"family": "monospace", "size": "x-large"})
     plt.show()
