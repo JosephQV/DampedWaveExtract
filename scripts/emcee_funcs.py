@@ -1,11 +1,14 @@
 import numpy as np
-from utility_funcs import guess_params, evaluate_wave_fcn
+import emcee
+from utility_funcs import guess_params, evaluate_wave_fcn, compute_rms
 
 
-def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, ranges: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> tuple[np.ndarray]:
+def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray]:
     """
     Updates each walker with a new position vector (parameters) and a ratio of the log probability of
     the new position to the old position of each.
+    **The parameter ranges (RANGES), noise data (NOISE), y-error (YERR), the wave function (WAVE_FCN), and wave keyword arguments (WAVE_KWARGS), must be initialized
+    as global variables before passing this function to the emcee sampler in an MHMove.**
 
     Args:
         coords (np.ndarray): The positions of the walkers, shape = (n-walkers, n-dimensions).
@@ -23,10 +26,10 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, ranges: 
     new_coords = np.empty_like(coords)      # new position vector for each walker
     log_ratios = np.empty(coords.shape[0])  # a ratio for each walker
     for i in range(coords.shape[0]):        # for each walker
-        old_likelihood = gaussian(coords[i], noise, yerr, wave_fcn, wave_kwargs)
+        old_likelihood = gaussian_likelihood(coords[i], NOISE, YERR, WAVE_FCN, WAVE_KWARGS)
         # propose new parameters
-        theta = guess_params(ranges, rng)
-        new_likelihood = gaussian(theta, noise, yerr, wave_fcn, wave_kwargs)
+        theta = guess_params(RANGES, rng)
+        new_likelihood = gaussian_likelihood(theta, NOISE, YERR, WAVE_FCN, WAVE_KWARGS)
         # log ratio of the new likelihood to the old likelihood
         log_ratios[i] = new_likelihood / old_likelihood
         # new position vector in the parameter space
@@ -34,7 +37,7 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator, ranges: 
     return new_coords, log_ratios
 
 
-def gaussian(theta: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> np.float64:
+def gaussian_likelihood(theta: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict) -> np.float64:
     wave = evaluate_wave_fcn(wave_fcn, theta, wave_kwargs)
     return -0.5 * np.sum(((noise - wave)/yerr) ** 2)
 
@@ -45,8 +48,57 @@ def log_prior(theta: np.ndarray, ranges: np.ndarray):
     return -np.inf
 
 
-def log_probability(theta: np.ndarray, noise: np.ndarray, yerr: float, ranges: np.ndarray, wave_fcn, wave_kwargs: dict) -> np.float64:
+def log_likelihood(theta: np.ndarray, noise: np.ndarray, yerr: float, ranges: np.ndarray, wave_fcn, wave_kwargs: dict) -> np.float64:
     lp = log_prior(theta, ranges)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + gaussian(theta, noise, yerr, wave_fcn, wave_kwargs)
+    return lp + gaussian_likelihood(theta, noise, yerr, wave_fcn, wave_kwargs)
+
+
+def emcee_trial(
+    real: np.ndarray,
+    num_iterations: int,
+    sampler_kwargs: dict,
+    priors: np.ndarray,
+    wave_fcn,
+    wave_kwargs: dict,
+    use_met_hastings: bool = False,
+    met_hastings_kwargs: dict | None = None
+):
+    if use_met_hastings == True:
+        initialize_metropolis_hastings_variables(**met_hastings_kwargs)
+        mh = emcee.moves.MHMove(proposal_function=met_hastings_proposal)
+        sampler = emcee.EnsembleSampler(moves=[(mh, 1.0)])
+    else:
+        sampler = emcee.EnsembleSampler(**sampler_kwargs)
+    
+    samples = run_for_samples(sampler, priors, num_iterations)
+    
+    rms = compare_for_error(real, samples, wave_fcn, wave_kwargs)
+    
+    return samples, rms
+
+
+def run_for_samples(sampler: emcee.EnsembleSampler, priors: np.ndarray, num_iterations: int):
+    state = sampler.run_mcmc(priors, 200)
+    sampler.reset()
+    sampler.run_mcmc(state, num_iterations)
+    return sampler.get_chain(flat=True)
+
+
+def compare_for_error(real_theta: np.ndarray, samples: np.ndarray, wave_fcn, wave_kwargs: dict):
+    median_theta = np.median(samples, axis=0)
+    real_wave = evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs)
+    generated = evaluate_wave_fcn(wave_fcn, median_theta, wave_kwargs)
+    return compute_rms(real_wave, generated)
+
+
+def initialize_metropolis_hastings_variables(ranges: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict):
+    global RANGES, NOISE, YERR, WAVE_FCN, WAVE_KWARGS
+    
+    RANGES = ranges
+    NOISE = noise
+    YERR = yerr
+    WAVE_FCN = wave_fcn
+    WAVE_KWARGS = wave_kwargs
+    

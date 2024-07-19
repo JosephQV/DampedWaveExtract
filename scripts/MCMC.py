@@ -1,22 +1,22 @@
 import numpy as np
-from wave_funcs import mcmc_wave
-from utility_funcs import generate_noise, compute_rms, guess_params
+from wave_funcs import *
+from utility_funcs import generate_noise, compute_rms, guess_params, evaluate_wave_fcn
 
 
 class MCMCModel:
-    def __init__(self, function, param_ranges: np.ndarray, function_kwargs: dict = None):
-        self.function = function
+    def __init__(self, wave_fcn, param_ranges: np.ndarray, wave_kwargs: dict = None):
+        self.wave_fcn = wave_fcn
         self.param_ranges = param_ranges
-        self.function_kwargs = function_kwargs
+        self.wave_kwargs = wave_kwargs
         
-    def likelihood(self, noisy_vals, params, tol=1e-9):
-        trial_vals = eval(self.function.__name__)(*params, **self.function_kwargs)
+    def likelihood(self, noisy_vals: np.ndarray, params: np.ndarray, tol=1e-9):
+        trial_vals = evaluate_wave_fcn(self.wave_fcn, params, self.wave_kwargs)
         rms_error = compute_rms(noisy_vals, trial_vals)
         likelihood = 1 / (rms_error + tol) 
         return likelihood
 
-    def metropolis_hastings(self, data, num_iterations, noise_scale, noise_amplitude=1.0):
-        noisy_vals = generate_noise(data, scale=noise_scale, noise_amp=noise_amplitude)
+    def metropolis_hastings(self, data: np.ndarray, num_iterations: int, snr: float) -> np.ndarray:
+        noisy_vals = generate_noise(data, snr=snr)
 
         current_params = guess_params(param_ranges=self.param_ranges)
 
@@ -41,9 +41,12 @@ class MCMCModel:
 
 if __name__ == "__main__":
     from utility_funcs import print_sample_statuses
-    model = MCMCModel(function=mcmc_wave, param_ranges=np.arange(6).reshape(3,2), function_kwargs={})
-    wave = mcmc_wave(5, 0.5, 2)
-    samples = model.metropolis_hastings(wave, 100, 2)
+    
+    model = MCMCModel(wave_fcn=damped_wave, param_ranges=np.random.randint(0, 10, 6).reshape(3,2), wave_kwargs={})
+    
+    real_wave = damped_wave([8.0, 0.5, 1.0])
+    samples = model.metropolis_hastings(data=real_wave, num_iterations=100, snr=1.0)
+    
     print_sample_statuses(samples)
     
     

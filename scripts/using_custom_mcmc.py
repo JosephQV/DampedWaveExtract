@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from MCMC import MCMCModel
-from wave_funcs import mcmc_wave
+from wave_funcs import damped_wave
 from utility_funcs import generate_noise
 from plotting_funcs import plot_mcmc_wave_results
 
@@ -9,8 +9,7 @@ if __name__ == "__main__":
     REAL_AMPLITUDE = 7.0
     REAL_DAMPING = 0.3
     REAL_ANGULAR_FREQ = 1.2
-    NOISE_AMPLITUDE = 1.0
-    NOISE_SCALE = 1.0
+    SNR = 1.0
     NUM_ITERATIONS = 10000
     DATA_STEPS = 1000
     TIMESPAN = 20
@@ -18,7 +17,7 @@ if __name__ == "__main__":
     CUTOFF_START = 0.3 # percentage of the samples from the beginning that will be skipped
 
     wave_kwargs = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
-    time, real_wave = mcmc_wave(REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ, return_time=True, **wave_kwargs)
+    time, real_wave = damped_wave([REAL_AMPLITUDE, REAL_DAMPING, REAL_ANGULAR_FREQ], return_time=True, **wave_kwargs)
 
     ranges = np.array(
         [
@@ -28,9 +27,9 @@ if __name__ == "__main__":
         ]
     )
 
-    model = MCMCModel(function=mcmc_wave, param_ranges=ranges, function_kwargs=wave_kwargs)
-    samples = model.metropolis_hastings(real_wave, NUM_ITERATIONS, noise_scale=NOISE_SCALE, noise_amplitude=NOISE_AMPLITUDE)
-    noise = generate_noise(real_wave, scale=NOISE_SCALE, noise_amp=NOISE_AMPLITUDE)
+    model = MCMCModel(function=damped_wave, param_ranges=ranges, function_kwargs=wave_kwargs)
+    samples = model.metropolis_hastings(real_wave, NUM_ITERATIONS, snr=SNR)
+    noise = generate_noise(real_wave, snr=SNR)
 
     #model.print_sample_statuses(samples)
 

@@ -1,7 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from utility_funcs import compute_rms, evaluate_wave_fcn
+from emcee_funcs import compare_for_error
 
+
+FACECOLOR = "#e8e1da"
 
 class PlottingWrapper:
     def __init__(
@@ -11,7 +14,8 @@ class PlottingWrapper:
         wave_fcn,
         wave_kwargs: dict,
         real_parameters: np.ndarray,
-        noise: np.ndarray
+        noise: np.ndarray,
+        snr: float
     ):
         self.samples = samples
         self.param_ranges = param_ranges
@@ -19,10 +23,14 @@ class PlottingWrapper:
         self.wave_kwargs = wave_kwargs
         self.real_parameters = real_parameters
         self.noise = noise
+        self.snr = snr
         self.time, self.real_wave = self._get_wave(self.real_parameters, return_time=True)
         self.means = np.mean(self.samples, axis=0)
+        self.medians = np.median(self.samples, axis=0)
         self.stds = np.std(self.samples, axis=0)
         self.mean_generated_wave = self._get_wave(self.means)
+        self.median_generated_wave = self._get_wave(self.medians)
+        self.axes_facecolor = FACECOLOR
     
     def _get_wave(self, theta, return_time: bool = False):
         if return_time == True:
@@ -46,13 +54,14 @@ class PlottingWrapper:
         real_parameter = self.real_parameters[parameter]
         
         mean = self.means[parameter]
+        median = self.medians[parameter]
         std = self.stds[parameter]
         
-        axes.hist(parameter_samples, bins=100, density=True, label="estimated distribution")
+        axes.hist(parameter_samples, bins=50, density=True, label="estimated distribution")
         axes.set_xlabel(xlabel)
         ylim = axes.get_ylim()
         axes.plot([real_parameter, real_parameter], [0.0, ylim[1]], label="true value", color="black")
-        axes.plot([mean, mean], [0.0, ylim[1]], label="sample mean", color="green")
+        axes.plot([median, median], [0.0, ylim[1]], label="sample median", color="green")
         axes.plot([mean+std, mean+std], [0.0, ylim[1]], "r--", label="+-1 std")
         axes.plot([mean-std, mean-std], [0.0, ylim[1]], "r--")
         axes.legend(loc="upper right", prop={"size": 8}, framealpha=0.5)
@@ -134,7 +143,7 @@ class PlottingWrapper:
             2: (1,0),
             3: (1,1)
         }
-        axes = figure.subplots(2, 2, subplot_kw={"facecolor": "#e3e3e3"})
+        axes = figure.subplots(2, 2, subplot_kw={"facecolor": self.axes_facecolor})
         
         for p in range(ndim):
             self._plot_distribution(axes[indices[p]], parameter=p, xlabel=xlabels[p])
@@ -149,19 +158,20 @@ class PlottingWrapper:
         
         axes = figure.add_subplot()
         axes.set_xlabel("time")
-        axes.set_facecolor("#e3e3e3")
+        axes.set_facecolor(self.axes_facecolor)
         axes.set_ylim(-1*self.real_parameters[0]*2, self.real_parameters[0]*2)
         
-        rms_deviation = compute_rms(self.real_wave, self.mean_generated_wave)
+        rms_deviation = compare_for_error(real_theta=self.real_parameters, samples=self.samples, wave_fcn=self.wave_fcn, wave_kwargs=self.wave_kwargs)
         
         text = f"{annotation}\nError (RMS): {rms_deviation:.3f}"
         axes.annotate(text, xy=(0.75, 0.70), xycoords="axes fraction")
         
         self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real"})
-        self._plot_wave(axes, self.means, plot_kwargs={"color": "green", "label": "generated"})    
+        self._plot_wave(axes, self.medians, plot_kwargs={"color": "green", "label": "sample median", "alpha": 0.4})
         #self._fill_within_std(axes)
-        self._plot_waves_within_std(axes)
+        #self._plot_waves_within_std(axes)
         axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)
+        axes.grid()
 
         return figure, axes
 
@@ -173,11 +183,13 @@ class PlottingWrapper:
         
         axes = figure.add_subplot()
         axes.set_xlabel("time")
-        axes.set_facecolor("#e3e3e3")
+        axes.set_facecolor(self.axes_facecolor)
         
         axes.plot(self.time, self.noise, label="noise")
-        self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real"})
-        axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)   
+        self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real", "alpha": 0.5})
+        axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)
+        axes.grid() 
+        axes.annotate(f"$SNR = ${self.snr}", xy=(0.1, 0.1), xycoords="axes fraction")
         
         return figure, axes
 
