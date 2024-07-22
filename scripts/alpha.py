@@ -128,10 +128,11 @@ if __name__ == "__main__":
     t = time.time() - start
     print(f"Finished. Time: {t}")
     
-    f_result = []
-    for median_theta, rms, snr in results:
+    f_result = np.zeros(shape=(len(results), 2))
+    for i in range(len(results)):
+        median_theta, rms, snr = results[i]
+        f_result[i] = [snr, rms]
         print(f"SNR: {snr:.2f}, RMS: {rms:.3f}")
-        f_result.append((snr, rms))
     
     try:
         fig = plt.figure()
