@@ -1,7 +1,6 @@
 import emcee
 import numpy as np
 import matplotlib.pyplot as plt
-from scripts.parallel_emcee_trials import emcee_trial
 from wave_funcs import damped_wave
 from utility_funcs import generate_noise, save_figure
 from plotting_funcs import PlottingWrapper
@@ -65,7 +64,7 @@ if __name__ == "__main__":
     sampler_kwargs = {
         "nwalkers": NWALKERS,
         "ndim": NDIM,
-        "log_prob_fn": log_probability,
+        "log_prob_fn": log_likelihood,
         "kwargs": lnprob_kwargs
     }
     

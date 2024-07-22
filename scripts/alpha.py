@@ -1,16 +1,14 @@
-import multiprocessing
+from multiprocessing.pool import Pool
 import time, csv
 import numpy as np
 from utility_funcs import generate_noise, evaluate_wave_fcn
 from wave_funcs import *
 from emcee_funcs import *
-from parallel_emcee_trials import emcee_trial
 import emcee
+import pathlib
 
 
-def initialize_shared_variables():
-    global RANGES, REAL_WAVE, WAVE_FCN, WAVE_KWARGS, SAMPLER_KWARGS, NDIM, NWALKERS, NUM_ITERATIONS
-
+def initialize_shared_config():
     real_amplitude = 4.0
     real_angular_freq = 8.5
     real_mean = 10.0
@@ -18,107 +16,134 @@ def initialize_shared_variables():
     real_theta = np.array(
         [real_amplitude, real_angular_freq, real_mean, real_deviation]
     )
-    
     # Additional arguments to the sine-gaussian function
-    data_steps = 10000   # data points (i.e length of x array)
+    data_steps = 1000    # data points (i.e length of x array)
     timespan = 30        # number of seconds
-    WAVE_KWARGS = {"seconds": timespan, "steps": data_steps}
-    WAVE_FCN = sine_gaussian_wave
-    REAL_WAVE = evaluate_wave_fcn(WAVE_FCN, real_theta, WAVE_KWARGS)
+    wave_kwargs = {"seconds": timespan, "steps": data_steps}
+    wave_fcn = sine_gaussian_wave
+    real_wave = evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs)
 
-    RANGES = np.array(
+    ranges = np.array(
         [
-            [0.1, 10.0],    # amplitude (A) range
-            [0.1, 15.0],    # angular frequency (omega) range
+            [0.1, 20.0],    # amplitude (A) range
+            [0.1, 20.0],    # angular frequency (omega) range
             [0.1, timespan],    # mean (mu) range
-            [0.1, 15.0]     # deviation (sigma) range
+            [0.1, 20.0]     # deviation (sigma) range
         ]
     )
     
+    yerr = 1.0
     # emcee parameters
-    NDIM = 4
-    NWALKERS = 20
-    NUM_ITERATIONS = 100 
+    ndim = 4
+    nwalkers = 100
+    num_iterations = 10000
     
-    
-def initialize_process_noise(*noise_args):
-    global NOISE
-    
-    noise_amplitude = noise_args[0]
-    noise_scale = noise_args[1]
-    
-    NOISE = generate_noise(REAL_WAVE, noise_scale, noise_amplitude)
+    shared_config = {
+        "real_theta": real_theta,
+        "real_wave": real_wave,
+        "wave_fcn": wave_fcn,
+        "wave_kwargs": wave_kwargs,
+        "real_wave": real_wave,
+        "ranges": ranges,
+        "yerr": yerr,
+        "ndim": ndim,
+        "nwalkers": nwalkers,
+        "num_iterations": num_iterations
+    }
+    return shared_config
 
 
-def initialize_process_sampler():
-    global SAMPLER_KWARGS, PRIORS
+def initialize_process_sampler(shared_config, snr):
+    real_wave = shared_config["real_wave"]
+    ndim = shared_config["ndim"]
+    nwalkers = shared_config["nwalkers"]
+    ranges = shared_config["ranges"]
+    yerr = shared_config["yerr"]
+    wave_fcn = shared_config["wave_fcn"]
+    wave_kwargs = shared_config["wave_kwargs"]
+        
+    noise = generate_noise(real_wave, snr)
     
-    YERR =  0.05 * np.mean(NOISE)
+    # initialize_metropolis_hastings_variables(
+    #     ranges=ranges,
+    #     noise=noise,
+    #     yerr=yerr,
+    #     wave_fcn=wave_fcn,
+    #     wave_kwargs=wave_kwargs
+    # )
+    # metropolis_hastings_move = emcee.moves.MHMove(proposal_function=met_hastings_proposal)
     
     # Keyword args for the emcee_funcs.log_probability method
-    lnprob_kwargs = {
-        "noise": NOISE,
-        "yerr": YERR,
-        "ranges": RANGES,
-        "wave_fcn": WAVE_FCN,
-        "wave_kwargs": WAVE_KWARGS
+    log_prob_kwargs = {
+        "noise": noise,
+        "yerr": yerr,
+        "ranges": ranges,
+        "wave_fcn": wave_fcn,
+        "wave_kwargs": wave_kwargs
     }
     
-    # Prior probabilities for the parameters for each walker
-    PRIORS = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
-
-    SAMPLER_KWARGS = {
-        "nwalkers": NWALKERS,
-        "ndim": NDIM,
-        "log_prob_fn": log_probability,
-        "kwargs": lnprob_kwargs,
-        "moves": [(metropolis_hastings_move, 1.0)]
-    }
-    
-    RANGES = ranges
-    NOISE = noise
-    YERR = yerr
-    WAVE_FCN = wave_fcn
-    WAVE_KWARGS = wave_kwargs
-
-
-def process_for_samples():
-    samples, rms = emcee_trial(
-        real=REAL_WAVE,
-        num_iterations=NUM_ITERATIONS,
-        sampler_kwargs=SAMPLER_KWARGS,
-        priors=PRIORS,
-        wave_fcn=WAVE_FCN,
-        wave_kwargs=WAVE_KWARGS
+    sampler = emcee.EnsembleSampler(
+        nwalkers=nwalkers,
+        ndim=ndim,
+        log_prob_fn=log_likelihood,
+        kwargs=log_prob_kwargs,
+        # moves=[(metropolis_hastings_move, 1.0)]
     )
+    
+    priors = np.random.uniform(low=ranges[:,0], high=ranges[:,1], size=(nwalkers, ndim))
 
-
-def run_in_parallel():
-    pass
-    # close the processes (exit the with block)
+    return sampler, priors
     
 
-def write_to_csv():
-    pass
+def process_for_samples(snr):
+    shared_config = initialize_shared_config()
+    sampler, priors = initialize_process_sampler(shared_config, snr)
+    
+    samples = run_for_samples(sampler, priors, num_iterations=shared_config["num_iterations"])
+    rms = compare_for_error(real_theta=shared_config["real_theta"], samples=samples, wave_fcn=shared_config["wave_fcn"], wave_kwargs=shared_config["wave_kwargs"])
+    return np.median(samples, axis=0), rms, snr
 
+
+def run_in_parallel(snrs: np.ndarray):
+    with Pool() as pool:
+        results = pool.map(process_for_samples, snrs)
+    
+    return results  # [(median1, rms1, snr1), (median1, rms2, snr2), ...]
+        
+    
+def write_to_csv(output_file, results):
+    with open(output_file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["SNR", "RMS"])
+        for snr, rms in results:
+            writer.writerow([snr, rms])
+        
 
 if __name__ == "__main__":
-    # Initialize some data store that holds the configuration for the trial, the wave parameters, etc.
-    initialize_shared_variables()
-    
-    # Initialize some data store like a queue to hold the results of each trial
-    
-    
-    # Initialize some array of values for noise strength (signal to noise ratios)
-    snrs = np.linspace(1.00, 0.10, num=90)
+    import matplotlib.pyplot as plt
+    snrs = np.linspace(1.50, 0.10, num=40)
 
-    # run in parallel the processes that will map noise inputs to their trial of emcee
     start = time.time()
-    error_by_noise = run_in_parallel()
+    results = run_in_parallel(snrs)
     t = time.time() - start
     print(f"Finished. Time: {t}")
     
-    # write the output to a csv file
-    write_to_csv()
+    f_result = np.zeros(shape=(len(results), 2))
+    for i in range(len(results)):
+        median_theta, rms, snr = results[i]
+        f_result[i] = [snr, rms]
+        print(f"SNR: {snr:.2f}, RMS: {rms:.3f}")
     
-    pass
+    try:
+        fig = plt.figure()
+        axes = fig.add_subplot()
+        axes.scatter(f_result[:, 0], f_result[:, 1], 8, "red")
+        axes.set_xlabel("SNR")
+        axes.set_ylabel("Error (RMS)")
+        fig.suptitle("Error by Signal to Noise Ratio")
+        plt.savefig("ErrorBySNR.png")
+    except Exception as e:
+        print(e)
+    
+    output_file = pathlib.Path.cwd().joinpath("ErrorBySNR.csv")
+    write_to_csv(output_file, f_result)
