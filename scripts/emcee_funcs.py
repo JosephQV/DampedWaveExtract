@@ -2,6 +2,11 @@ import numpy as np
 import emcee
 from utility_funcs import guess_params, evaluate_wave_fcn, compute_rms
 
+# RANGES = None
+# NOISE = None
+# YERR = None
+# WAVE_FCN = None
+# WAVE_KWARGS = None
 
 def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray]:
     """
@@ -26,10 +31,10 @@ def met_hastings_proposal(coords: np.ndarray, rng: np.random.Generator) -> tuple
     new_coords = np.empty_like(coords)      # new position vector for each walker
     log_ratios = np.empty(coords.shape[0])  # a ratio for each walker
     for i in range(coords.shape[0]):        # for each walker
-        old_likelihood = gaussian_likelihood(coords[i], NOISE, YERR, WAVE_FCN, WAVE_KWARGS)
+        old_likelihood = gaussian_likelihood(coords[i], noise, yerr, wave_fcn, wave_kwargs)
         # propose new parameters
-        theta = guess_params(RANGES, rng)
-        new_likelihood = gaussian_likelihood(theta, NOISE, YERR, WAVE_FCN, WAVE_KWARGS)
+        theta = guess_params(ranges, rng)
+        new_likelihood = gaussian_likelihood(theta, noise, yerr, wave_fcn, wave_kwargs)
         # log ratio of the new likelihood to the old likelihood
         log_ratios[i] = new_likelihood / old_likelihood
         # new position vector in the parameter space

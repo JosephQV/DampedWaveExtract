@@ -28,26 +28,26 @@ if __name__ == "__main__":
     # Parameter guessing ranges
     RANGES = np.array(
         [
-            [0.1, 15.0],    # amplitude (A) range
-            [0.1, 15.0],    # angular frequency (omega) range
+            [0.1, 20.0],    # amplitude (A) range
+            [0.1, 20.0],    # angular frequency (omega) range
             [0.1, TIMESPAN],    # mean (mu) range
-            [0.1, 15.0]     # deviation (sigma) range
+            [0.1, 20.0]     # deviation (sigma) range
         ]
     )
     
     # Signal to Noise Ratio ( greater than 1 is very little noise, close to 0 is intense noise)
-    SNR = 0.5
+    SNR = 0.30
     
     # emcee parameters
     NDIM = 4
     NWALKERS = 100
-    NUM_ITERATIONS = 10000
+    NUM_ITERATIONS = 12000
     #---------------------------------------------------------------------------------
     
     real_wave = evaluate_wave_fcn(WAVE_FCN, REAL_THETA, WAVE_KWARGS)
     noise = generate_noise(real_wave, snr=SNR)
     
-    yerr = 1.0
+    yerr = 1.0  # sigma, deviation for guessing
     
     # Keyword args for the emcee_funcs.log_probability method
     log_prob_kwargs = {
@@ -101,19 +101,19 @@ if __name__ == "__main__":
             
     fig, axes = plotter.plot_sample_distributions(xlabels=["Amplitude", "Angular Frequency", "Mean", "Deviation"])
     if save:
-        save_figure(fig, "SineGaussian/MedNoiseSampleDistributions.png")
+        save_figure(fig, "SineGaussian/test/SampleDistributions.png")
     else:
         plt.show()
     
     annotation = f"Real Parameters:\n$A = ${REAL_AMPLITUDE}\n$\\omega = ${REAL_ANGULAR_FREQ}\n$\\mu = ${REAL_MEAN}\n$\\sigma = ${REAL_DEVIATION}"
     fig, axes = plotter.plot_real_vs_generated(annotation=annotation)
     if save:
-        save_figure(fig, "SineGaussian/MedNoiseRealVsGenerated.png")
+        save_figure(fig, "SineGaussian/test/RealVsGenerated.png")
     else:
         plt.show()
     
     fig, axes = plotter.plot_signal_in_noise()
     if save:
-        save_figure(fig, "SineGaussian/MedNoiseMaskedInNoise.png")
+        save_figure(fig, "SineGaussian/test/MaskedInNoise.png")
     else:
         plt.show()
