@@ -134,11 +134,13 @@ if __name__ == "__main__":
         f_result.append((snr, rms))
     
     fig = plt.figure()
-    axes = fig.add_axes()
+    axes = fig.add_subplot()
     axes.scatter(f_result[0], f_result[1], "red")
     axes.set_xlabel("SNR")
     axes.set_ylabel("Error (RMS)")
     fig.suptitle("Error by Signal to Noise Ratio")
+    
+    plt.savefig("ErrorBySNR.png")
     
     output_file = pathlib.Path.cwd().joinpath("ErrorBySNR.csv")
     write_to_csv(output_file, f_result)
