@@ -121,7 +121,7 @@ def write_to_csv(output_file, results):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    snrs = np.linspace(1.00, 0.10, num=25)
+    snrs = np.linspace(1.50, 0.10, num=40)
 
     start = time.time()
     results = run_in_parallel(snrs)
@@ -133,14 +133,16 @@ if __name__ == "__main__":
         print(f"SNR: {snr:.2f}, RMS: {rms:.3f}")
         f_result.append((snr, rms))
     
-    fig = plt.figure()
-    axes = fig.add_subplot()
-    axes.scatter(f_result[0], f_result[1], "red")
-    axes.set_xlabel("SNR")
-    axes.set_ylabel("Error (RMS)")
-    fig.suptitle("Error by Signal to Noise Ratio")
-    
-    plt.savefig("ErrorBySNR.png")
+    try:
+        fig = plt.figure()
+        axes = fig.add_subplot()
+        axes.scatter(f_result[0], f_result[1], "red", 8)
+        axes.set_xlabel("SNR")
+        axes.set_ylabel("Error (RMS)")
+        fig.suptitle("Error by Signal to Noise Ratio")
+        plt.savefig("ErrorBySNR.png")
+    except Exception as e:
+        print(e)
     
     output_file = pathlib.Path.cwd().joinpath("ErrorBySNR.csv")
     write_to_csv(output_file, f_result)
