@@ -136,7 +136,7 @@ if __name__ == "__main__":
     try:
         fig = plt.figure()
         axes = fig.add_subplot()
-        axes.scatter(f_result[0], f_result[1], "red", 8)
+        axes.scatter(f_result[0], f_result[1], 8, "red")
         axes.set_xlabel("SNR")
         axes.set_ylabel("Error (RMS)")
         fig.suptitle("Error by Signal to Noise Ratio")
