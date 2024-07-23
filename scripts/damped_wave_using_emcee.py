@@ -6,6 +6,8 @@ from utility_funcs import generate_noise, save_figure
 from plotting_funcs import PlottingWrapper
 from emcee_funcs import *
 import sys
+import time
+import multiprocessing
 
     
 if __name__ == "__main__":
@@ -19,65 +21,62 @@ if __name__ == "__main__":
     
     RANGES = np.array(
         [
-            [0.1, 10.0],    # amplitude (A) range
-            [0.1, 3.0],     # damping (b) range
-            [0.1, 10.0],    # angular frequency (omega) range
+            [0.1, 20.0],    # amplitude (A) range
+            [0.1, 20.0],    # damping (b) range
+            [0.1, 20.0],    # angular frequency (omega) range
         ]
     )
     
+    WAVE_FCN = damped_wave
     DATA_STEPS = 1000
     TIMESPAN = 20
     WAVE_KWARGS = {"phase": 0.0, "seconds": TIMESPAN, "steps": DATA_STEPS}
     
-    SNR = 1.0
+    SNR = 0.5
     
     NDIM = 3
-    NWALKERS = 50
-    NUM_ITERATIONS = 10000
+    NWALKERS = 100
+    NUM_ITERATIONS = 12000
     
     
     # ------------------------------------------
-    time, real_wave = damped_wave(REAL_THETA, return_time=True, **WAVE_KWARGS)
+    real_wave = evaluate_wave_fcn(WAVE_FCN, REAL_THETA, WAVE_KWARGS)
     noise = generate_noise(real_wave, snr=SNR)
-    yerr =  1 / SNR
+    yerr = 1.0
                 
     # Keyword args for the emcee_funcs.log_probability method
-    lnprob_kwargs = {
+    log_prob_kwargs = {
         "noise": noise,
         "yerr": yerr,
         "ranges": RANGES,
-        "wave_fcn": damped_wave,
-        "wave_kwargs": WAVE_KWARGS
-    }
-    # Keyword args for the emcee_funcs.met_hastings_proposal method
-    mh_kwargs = {
-        "ranges": RANGES,
-        "noise": noise,
-        "yerr": yerr,
-        "wave_fcn": damped_wave,
+        "wave_fcn": WAVE_FCN,
         "wave_kwargs": WAVE_KWARGS
     }
     
     # Prior probabilities for the parameters for each walker
     priors = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
 
-    sampler_kwargs = {
-        "nwalkers": NWALKERS,
-        "ndim": NDIM,
-        "log_prob_fn": log_likelihood,
-        "kwargs": lnprob_kwargs
-    }
+    processor_pool = multiprocessing.Pool()
     
-    samples, rms = emcee_trial(
-        real=real_wave,
-        num_iterations=NUM_ITERATIONS,
-        sampler_kwargs=sampler_kwargs,
-        priors=priors,
-        wave_fcn=damped_wave,
-        wave_kwargs=WAVE_KWARGS,
-        use_met_hastings=False,
-        met_hastings_kwargs=None
+    sampler = emcee.EnsembleSampler(
+        nwalkers=NWALKERS,
+        ndim=NDIM,
+        log_prob_fn=log_likelihood,
+        kwargs=log_prob_kwargs,
+        pool=processor_pool
     )
+    
+    start = time.time()
+    samples = run_for_samples(sampler, priors=priors, num_iterations=NUM_ITERATIONS)
+    end = time.time()
+    
+    rms = compare_for_error(real_theta=REAL_THETA, samples=samples, wave_fcn=WAVE_FCN, wave_kwargs=WAVE_KWARGS)
+    
+    real_likelihood = gaussian_likelihood(theta=REAL_THETA, noise=noise, yerr=yerr, wave_fcn=WAVE_FCN, wave_kwargs=WAVE_KWARGS)
+    mean_theta_likelihood = gaussian_likelihood(theta=np.mean(samples, axis=0), noise=noise, yerr=yerr, wave_fcn=WAVE_FCN, wave_kwargs=WAVE_KWARGS)
+    median_theta_likelihood = gaussian_likelihood(theta=np.median(samples, axis=0), noise=noise, yerr=yerr, wave_fcn=WAVE_FCN, wave_kwargs=WAVE_KWARGS)
+
+    print(f"Finished processing MCMC in {end - start:.2f} seconds.\nError (RMS): {rms}\nLikelihoods (real, mean, median): {real_likelihood:.2f}, {mean_theta_likelihood:.2f}, {median_theta_likelihood:.2f}\nSamples count: {samples.shape}")
     
     # ------------- Plotting / Saving ------------------
     save = False
@@ -88,10 +87,11 @@ if __name__ == "__main__":
     plotter = PlottingWrapper(
         samples=samples,
         param_ranges=RANGES,
-        wave_fcn=damped_wave,
+        wave_fcn=WAVE_FCN,
         wave_kwargs=WAVE_KWARGS,
         real_parameters=REAL_THETA,
-        noise=noise
+        noise=noise,
+        snr=SNR
     )
     figure, axes = plotter.plot_mcmc_wave_results()
     if save == True:

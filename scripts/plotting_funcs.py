@@ -112,20 +112,18 @@ class PlottingWrapper:
         self._plot_distribution(axes["F"], 2, "Angular Frequency")
         
         self._plot_wave(axes["W"], self.real_parameters, plot_kwargs={"color": "red", "label": "real"})
-        self._plot_wave(axes["W"], self.means, plot_kwargs={"color": "green", "label": "generated"})        
+        self._plot_wave(axes["W"], self.medians, plot_kwargs={"color": "green", "label": "generated"})        
         
-        rms_deviation = compute_rms(self.real_wave, self.mean_generated_wave)
+        rms_deviation = compare_for_error(self.real_parameters, self.samples, self.wave_fcn, self.wave_kwargs)
         axes["W"].annotate(f"Real Parameters:\nAmplitude: {self.real_parameters[0]}\nDamping: {self.real_parameters[1]}\nAngular Frequency: {self.real_parameters[2]}\n\nRMS Deviation: {rms_deviation:.3f}", xy=(0.75, 0.60), xycoords="axes fraction")
         #self._fill_within_std(axes["W"])
         self._plot_waves_within_std(axes["W"])
         axes["W"].legend()
         axes["W"].set_xlabel("time")
-
-
         axes["N"].plot(self.time, self.noise, label="noise")
         axes["N"].set_xlabel("time")
         axes["N"].legend()
-        # axes["N"].annotate(f"Noise amplitude: {np.max(noise[int(len(noise) * 0.75):]) - np.mean(noise[int(noise.shape[0] * 0.75)])}", xy=(0.53, 0.9), xycoords="axes fraction")
+        axes["N"].annotate(f"$SNR = ${self.snr}", xy=(0.53, 0.9), xycoords="axes fraction")
         
         return figure, axes
 
@@ -187,7 +185,7 @@ class PlottingWrapper:
         
         axes.plot(self.time, self.noise, label="noise")
         self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real", "alpha": 0.5})
-        axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)
+        axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.75)
         axes.grid() 
         axes.annotate(f"$SNR = ${self.snr}", xy=(0.1, 0.1), xycoords="axes fraction")
         
