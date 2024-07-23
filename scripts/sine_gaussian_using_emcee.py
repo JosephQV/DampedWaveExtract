@@ -36,7 +36,7 @@ if __name__ == "__main__":
     )
     
     # Signal to Noise Ratio ( greater than 1 is very little noise, close to 0 is intense noise)
-    SNR = 0.30
+    SNR = 0.1
     
     # emcee parameters
     NDIM = 4
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # Prior probabilities for the parameters for each walker
     priors = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
 
-    processor_pool = multiprocessing.pool.Pool()
+    processor_pool = multiprocessing.Pool()
     
     sampler = emcee.EnsembleSampler(
         nwalkers=NWALKERS,
