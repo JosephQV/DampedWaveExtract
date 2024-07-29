@@ -1,0 +1,217 @@
+12:21 INFO    : Waveform generator initiated with
+  frequency_domain_source_model: bilby.gw.source.lal_binary_neutron_star
+  time_domain_source_model: None
+  parameter_conversion: bilby.gw.conversion.convert_to_lal_binary_neutron_star_parameters
+12:21 INFO    : Injected signal in H1:
+12:21 INFO    :   optimal SNR = 48.53
+12:21 INFO    :   matched filter SNR = 48.53+0.00j
+12:21 INFO    :   chirp_mass = 1.3045040823929401
+12:21 INFO    :   mass_ratio = 0.8679823316041314
+12:21 INFO    :   chi_1 = -0.008104654230022925
+12:21 INFO    :   chi_2 = 0.004063180021609744
+12:21 INFO    :   lambda_1 = 106.38046972684711
+12:21 INFO    :   lambda_2 = 272.75262649882063
+12:21 INFO    :   ra = 0.9690181423973839
+12:21 INFO    :   dec = 1.0485191476021183
+12:21 INFO    :   luminosity_distance = 58.0
+12:21 INFO    :   theta_jn = 2.56171991199752
+12:21 INFO    :   psi = 0.3643211321014299
+12:21 INFO    :   phase = 1.3
+12:21 INFO    :   geocent_time = 1187008882
+12:21 INFO    : Injected signal in L1:
+12:21 INFO    :   optimal SNR = 44.33
+12:21 INFO    :   matched filter SNR = 44.33-0.00j
+12:21 INFO    :   chirp_mass = 1.3045040823929401
+12:21 INFO    :   mass_ratio = 0.8679823316041314
+12:21 INFO    :   chi_1 = -0.008104654230022925
+12:21 INFO    :   chi_2 = 0.004063180021609744
+12:21 INFO    :   lambda_1 = 106.38046972684711
+12:21 INFO    :   lambda_2 = 272.75262649882063
+12:21 INFO    :   ra = 0.9690181423973839
+12:21 INFO    :   dec = 1.0485191476021183
+12:21 INFO    :   luminosity_distance = 58.0
+12:21 INFO    :   theta_jn = 2.56171991199752
+12:21 INFO    :   psi = 0.3643211321014299
+12:21 INFO    :   phase = 1.3
+12:21 INFO    :   geocent_time = 1187008882
+12:21 INFO    : Injected signal in V1:
+12:21 INFO    :   optimal SNR = 18.64
+12:21 INFO    :   matched filter SNR = 18.64-0.00j
+12:21 INFO    :   chirp_mass = 1.3045040823929401
+12:21 INFO    :   mass_ratio = 0.8679823316041314
+12:21 INFO    :   chi_1 = -0.008104654230022925
+12:21 INFO    :   chi_2 = 0.004063180021609744
+12:21 INFO    :   lambda_1 = 106.38046972684711
+12:21 INFO    :   lambda_2 = 272.75262649882063
+12:21 INFO    :   ra = 0.9690181423973839
+12:21 INFO    :   dec = 1.0485191476021183
+12:21 INFO    :   luminosity_distance = 58.0
+12:21 INFO    :   theta_jn = 2.56171991199752
+12:21 INFO    :   psi = 0.3643211321014299
+12:21 INFO    :   phase = 1.3
+12:21 INFO    :   geocent_time = 1187008882
+12:21 INFO    : Injected signal in K1:
+12:21 INFO    :   optimal SNR = 13.10
+12:21 INFO    :   matched filter SNR = 13.10-0.00j
+12:21 INFO    :   chirp_mass = 1.3045040823929401
+12:21 INFO    :   mass_ratio = 0.8679823316041314
+12:21 INFO    :   chi_1 = -0.008104654230022925
+12:21 INFO    :   chi_2 = 0.004063180021609744
+12:21 INFO    :   lambda_1 = 106.38046972684711
+12:21 INFO    :   lambda_2 = 272.75262649882063
+12:21 INFO    :   ra = 0.9690181423973839
+12:21 INFO    :   dec = 1.0485191476021183
+12:21 INFO    :   luminosity_distance = 58.0
+12:21 INFO    :   theta_jn = 2.56171991199752
+12:21 INFO    :   psi = 0.3643211321014299
+12:21 INFO    :   phase = 1.3
+12:21 INFO    :   geocent_time = 1187008882
+12:21 INFO    : No prior given, using default BNS priors in /home/joseph/miniconda3/envs/simulations/lib/python3.9/site-packages/bilby/gw/prior_files/aligned_spins_bns_tides_on.prior.
+12:21 INFO    : Waveform generator initiated with
+  frequency_domain_source_model: bilby.gw.source.binary_neutron_star_roq
+  time_domain_source_model: None
+  parameter_conversion: bilby.gw.conversion.convert_to_lal_binary_neutron_star_parameters
+12:21 INFO    : Loaded distance marginalisation lookup table does not match for distance_array.
+12:21 INFO    : Building lookup table for distance marginalisation.
+12:22 INFO    : Loading linear_matrix from /home/michael/projects/eos/GWXtreme_Tasks/year2/bilby_runs/simulations/roq/usedfor_uniformP_LTs/basis.hdf5
+12:22 INFO    : Loading quadratic_matrix from /home/michael/projects/eos/GWXtreme_Tasks/year2/bilby_runs/simulations/roq/usedfor_uniformP_LTs/basis.hdf5
+12:22 INFO    : ROQ time-step = 6.103515625e-05
+12:22 INFO    : Using 4683 ROQ time samples
+12:22 INFO    : Check ROQ params with roq_scale_factor=1
+12:22 INFO    : Building ROQ weights for H1 with 1038337 frequencies between 20.0 and 2048.0.
+12:22 INFO    : Check ROQ params with roq_scale_factor=1
+12:22 INFO    : Building ROQ weights for L1 with 1038337 frequencies between 20.0 and 2048.0.
+12:22 INFO    : Check ROQ params with roq_scale_factor=1
+12:22 INFO    : Building ROQ weights for V1 with 1038337 frequencies between 20.0 and 2048.0.
+12:22 INFO    : Check ROQ params with roq_scale_factor=1
+12:22 INFO    : Building ROQ weights for K1 with 1038337 frequencies between 20.0 and 2048.0.
+12:22 INFO    : Building linear ROQ weights for the 8-th basis.
+12:22 INFO    : Building linear ROQ weights for the 9-th basis.
+12:22 INFO    : Building quadratic ROQ weights for the 0-th basis.
+12:22 INFO    : Running for label 'bns_example', output will be saved to '/home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37/'
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Performing redundancy check using BBHPriorDict(self).test_redundancy
+12:22 INFO    : Using lal version 7.4.1
+12:22 INFO    : Using lal git version Branch: None;Tag: lalsuite-v7.21;Id: cc61d073d248e45c3c75d3732ee642448f7bc008;;Builder: Unknown User <>;Repository status: CLEAN: All modifications committed
+12:22 INFO    : Using lalsimulation version 5.3.1
+12:22 INFO    : Using lalsimulation git version Branch: None;Tag: lalsuite-v7.21;Id: cc61d073d248e45c3c75d3732ee642448f7bc008;;Builder: Unknown User <>;Repository status: CLEAN: All modifications committed
+12:22 INFO    : Analysis priors:
+12:22 INFO    : mass_ratio=bilby.gw.prior.UniformInComponentsMassRatio(minimum=0.125, maximum=1, name='mass_ratio', latex_label='$q$', unit=None, boundary=None, equal_mass=False)
+12:22 INFO    : chirp_mass=bilby.gw.prior.UniformInComponentsChirpMass(minimum=1.239278878273293, maximum=1.3697292865125872, name='chirp_mass', latex_label='$\\mathcal{M}$', unit=None, boundary=None)
+12:22 INFO    : dec=Cosine(minimum=-1.5707963267948966, maximum=1.5707963267948966, name='dec', latex_label='$\\mathrm{DEC}$', unit=None, boundary=None)
+12:22 INFO    : ra=Uniform(minimum=0, maximum=6.283185307179586, name='ra', latex_label='$\\mathrm{RA}$', unit=None, boundary='periodic')
+12:22 INFO    : theta_jn=Sine(minimum=0, maximum=3.141592653589793, name='theta_jn', latex_label='$\\theta_{JN}$', unit=None, boundary=None)
+12:22 INFO    : psi=Uniform(minimum=0, maximum=3.141592653589793, name='psi', latex_label='$\\psi$', unit=None, boundary='periodic')
+12:22 INFO    : chi_1=Uniform(minimum=-0.05, maximum=0.05, name='chi_1', latex_label='$\\chi_1$', unit=None, boundary=None)
+12:22 INFO    : chi_2=Uniform(minimum=-0.05, maximum=0.05, name='chi_2', latex_label='$\\chi_2$', unit=None, boundary=None)
+12:22 INFO    : lambda_tilde=Uniform(minimum=0, maximum=5000, name='lambda_tilde', latex_label='$\\tilde{\\Lambda}$', unit=None, boundary=None)
+12:22 INFO    : delta_lambda=Uniform(minimum=-5000, maximum=5000, name='delta_lambda', latex_label='delta_lambda', unit=None, boundary=None)
+12:22 INFO    : geocent_time=Uniform(minimum=1187008881.9, maximum=1187008882.1, name='geocent_time', latex_label='$t_c$', unit='$s$', boundary=None)
+12:22 INFO    : luminosity_distance=125.41528014468943
+12:22 INFO    : phase=0.0
+12:22 INFO    : Analysis likelihood class: <class 'bilby.gw.likelihood.roq.ROQGravitationalWaveTransient'>
+12:22 INFO    : Analysis likelihood noise evidence: -2419.7188519683946
+12:22 INFO    : Single likelihood evaluation took 1.125e-03 s
+12:22 INFO    : Using sampler Dynesty with kwargs {'nlive': 2000, 'bound': 'live', 'sample': 'act-walk', 'periodic': None, 'reflective': None, 'update_interval': 600, 'first_update': None, 'npdim': None, 'rstate': None, 'queue_size': 100, 'pool': None, 'use_pool': None, 'live_points': None, 'logl_args': None, 'logl_kwargs': None, 'ptform_args': None, 'ptform_kwargs': None, 'gradient': None, 'grad_args': None, 'grad_kwargs': None, 'compute_jac': False, 'enlarge': None, 'bootstrap': None, 'walks': 100, 'facc': 0.2, 'slices': None, 'fmove': 0.9, 'max_move': 100, 'update_func': None, 'ncdim': None, 'blob': False, 'save_history': False, 'history_filename': None, 'maxiter': None, 'maxcall': None, 'dlogz': 0.1, 'logl_max': inf, 'n_effective': None, 'add_live': True, 'print_progress': True, 'print_func': <bound method Dynesty._print_func of <bilby.core.sampler.dynesty.Dynesty object at 0x7f5f86e57100>>, 'save_bounds': False, 'checkpoint_file': None, 'checkpoint_every': 60, 'resume': False, 'seed': None}
+12:22 INFO    : Checkpoint every check_point_delta_t = 600s
+12:22 INFO    : Using dynesty version 2.1.2
+12:22 INFO    : Using the bilby-implemented act-walk sampling tracking the autocorrelation function and thinning by 10 with maximum length 50000
+12:22 INFO    : Setting up multiproccesing pool with 100 processes
+12:22 INFO    : Resume file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle does not exist.
+12:22 INFO    : Generating initial points from the prior
+12:32 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+12:32 WARNING : Axis limits cannot be NaN or Inf
+12:32 WARNING : Failed to create dynesty run plot at checkpoint
+12:43 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+12:43 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+12:43 WARNING : Failed to create dynesty state plot at checkpoint
+12:43 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+12:43 WARNING : Failed to create dynesty unit state plot at checkpoint
+12:43 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+12:43 WARNING : Failed to create dynesty run plot at checkpoint
+12:54 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+12:54 WARNING : Axis limits cannot be NaN or Inf
+12:54 WARNING : Failed to create dynesty run plot at checkpoint
+13:05 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+13:05 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+13:05 WARNING : Failed to create dynesty state plot at checkpoint
+13:05 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+13:05 WARNING : Failed to create dynesty unit state plot at checkpoint
+13:05 WARNING : The data appears to lie in a lower-dimensional subspace of the space in which it is expressed. This has resulted in a singular data covariance matrix, which cannot be treated using the algorithms implemented in `gaussian_kde`. Consider performing principle component analysis / dimensionality reduction and using `gaussian_kde` with the transformed data.
+13:05 WARNING : Failed to create dynesty run plot at checkpoint
+13:15 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+13:15 WARNING : Axis limits cannot be NaN or Inf
+13:15 WARNING : Failed to create dynesty run plot at checkpoint
+13:26 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+13:27 WARNING : Axis limits cannot be NaN or Inf
+13:27 WARNING : Failed to create dynesty run plot at checkpoint
+13:38 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+13:38 WARNING : Axis limits cannot be NaN or Inf
+13:38 WARNING : Failed to create dynesty run plot at checkpoint
+13:49 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+13:49 WARNING : Axis limits cannot be NaN or Inf
+13:49 WARNING : Failed to create dynesty run plot at checkpoint
+14:00 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:00 WARNING : Axis limits cannot be NaN or Inf
+14:00 WARNING : Failed to create dynesty run plot at checkpoint
+14:10 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:11 WARNING : Axis limits cannot be NaN or Inf
+14:11 WARNING : Failed to create dynesty run plot at checkpoint
+14:21 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:21 WARNING : Axis limits cannot be NaN or Inf
+14:21 WARNING : Failed to create dynesty run plot at checkpoint
+14:32 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:32 WARNING : Axis limits cannot be NaN or Inf
+14:32 WARNING : Failed to create dynesty run plot at checkpoint
+14:43 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:43 WARNING : Axis limits cannot be NaN or Inf
+14:43 WARNING : Failed to create dynesty run plot at checkpoint
+14:54 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+14:54 WARNING : Axis limits cannot be NaN or Inf
+14:54 WARNING : Failed to create dynesty run plot at checkpoint
+15:05 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+15:06 WARNING : Axis limits cannot be NaN or Inf
+15:06 WARNING : Failed to create dynesty run plot at checkpoint
+15:17 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+15:18 WARNING : Axis limits cannot be NaN or Inf
+15:18 WARNING : Failed to create dynesty run plot at checkpoint
+15:29 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+15:30 WARNING : Axis limits cannot be NaN or Inf
+15:30 WARNING : Failed to create dynesty run plot at checkpoint
+15:40 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+15:41 WARNING : Axis limits cannot be NaN or Inf
+15:41 WARNING : Failed to create dynesty run plot at checkpoint
+15:51 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+15:52 WARNING : Axis limits cannot be NaN or Inf
+15:52 WARNING : Failed to create dynesty run plot at checkpoint
+16:02 INFO    : Written checkpoint file /home/joseph/outdir2IMRPhenomPv2_NRTidal/APR4_EPP/58_1.58_1.37//bns_example_resume.pickle
+16:02 WARNING : Axis limits cannot be NaN or Inf
+16:02 WARNING : Failed to create dynesty run plot at checkpoint
+16:02 INFO    : Starting to close worker pool.
+16:02 INFO    : Finished closing worker pool.
+16:03 INFO    : Rejection sampling nested samples to obtain 9415 posterior samples
+16:03 INFO    : Sampling time: 3:40:24.235509
+16:03 INFO    : Computing per-detector log likelihoods.
+16:03 INFO    : Using a pool with size 100 for nsamples=9415
+16:03 INFO    : Reconstructing marginalised parameters.
+16:03 INFO    : Using a pool with size 100 for nsamples=9415
+16:03 INFO    : Generating sky frame parameters.
+16:03 INFO    : Computing SNRs for every sample.
+16:03 INFO    : Using a pool with size 100 for nsamples=9415
+16:04 INFO    : Summary of results:
+nsamples: 9415
+ln_noise_evidence: -2419.719
+ln_evidence: -53.739 +/-  0.171
+ln_bayes_factor: 2365.980 +/-  0.171
+

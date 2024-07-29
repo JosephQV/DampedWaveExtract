@@ -19,6 +19,10 @@ def sine_gaussian_wave(theta, seconds=30, steps=1000, return_time=False):
     return displacement
 
 
+def bilby_sine_gaussian_wave(time, amplitude, angular_freq, mean, deviation):
+    return amplitude * np.exp(-0.5 * (((time - mean) / deviation) ** 2 )) * np.sin(angular_freq * time)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from plotting_funcs import FACECOLOR

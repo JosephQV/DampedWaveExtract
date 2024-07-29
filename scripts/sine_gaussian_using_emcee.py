@@ -36,12 +36,12 @@ if __name__ == "__main__":
     )
     
     # Signal to Noise Ratio ( greater than 1 is very little noise, close to 0 is intense noise)
-    SNR = 0.1
+    SNR = 0.23
     
     # emcee parameters
     NDIM = 4
     NWALKERS = 100
-    NUM_ITERATIONS = 12000
+    NUM_ITERATIONS = 10000
     #---------------------------------------------------------------------------------
     
     real_wave = evaluate_wave_fcn(WAVE_FCN, REAL_THETA, WAVE_KWARGS)
@@ -72,8 +72,9 @@ if __name__ == "__main__":
     )
     
     start = time.time()
-    samples = run_for_samples(sampler, priors=priors, num_iterations=NUM_ITERATIONS)
+    sampler.run_mcmc(priors, NUM_ITERATIONS)
     end = time.time()
+    samples = sampler.get_chain(flat=True)
     
     rms = compare_for_error(real_theta=REAL_THETA, samples=samples, wave_fcn=WAVE_FCN, wave_kwargs=WAVE_KWARGS)
     
@@ -115,5 +116,12 @@ if __name__ == "__main__":
     fig, axes = plotter.plot_signal_in_noise()
     if save:
         save_figure(fig, "SineGaussian/test/MaskedInNoise.png")
+    else:
+        plt.show()
+    
+    plotter.samples = sampler.get_chain()[:, np.random.randint(0, NWALKERS)]   # using one of the chains from one random walker for this plot
+    fig, axes = plotter.plot_posterior_traces(ylabels=["Amplitude", "Angular Frequency", "Mean", "Deviation"], iter_start=0, iter_end=NUM_ITERATIONS)
+    if save:
+        save_figure(fig, "SineGaussian/test/SampleTraces.png")
     else:
         plt.show()

@@ -44,13 +44,13 @@ class PlottingWrapper:
         wave = self._get_wave(theta)
         axes.plot(self.time, wave, **plot_kwargs)
         
-    def _make_figure(self, title, size=(8, 5)):
-        figure = plt.figure(figsize=size)
-        figure.suptitle(title, fontsize="x-large", fontfamily="monospace")
+    def _make_figure(self, title, size=(8, 5), fontsize=18):
+        figure = plt.figure(figsize=size, dpi=100)
+        figure.suptitle(title, fontsize=fontsize, fontfamily="monospace")
         return figure
         
     def _plot_distribution(self, axes, parameter: int, xlabel: str):
-        parameter_samples = self.samples[parameter]
+        parameter_samples = self.samples[:, parameter]
         real_parameter = self.real_parameters[parameter]
         
         mean = self.means[parameter]
@@ -68,7 +68,6 @@ class PlottingWrapper:
         axes.set_xlim(left=self.param_ranges[parameter, 0], right=self.param_ranges[parameter, 1])
 
     def _fill_within_std(self, axes):
-        
         above = self._get_wave(self.means+self.stds)
         below = self._get_wave(self.means-self.stds)
         
@@ -92,6 +91,18 @@ class PlottingWrapper:
         min_length = min(min_length, num_lines)
         for i in range(min_length):
             self._plot_wave(axes, thetas_within_std[i], plot_kwargs={"color": "green", "linestyle": "-", "alpha": 0.01})
+
+    def _plot_posterior_trace(self, axes, parameter, ylabel, iter_start, iter_end):
+        x = np.arange(iter_start, iter_end, 1)
+        value = self.samples[iter_start:iter_end, parameter]
+        axes.plot(x, value, color="red", label="chain", alpha=0.5)
+        axes.set_ylabel(ylabel, labelpad=2.0)
+        axes.set_ylim(self.param_ranges[parameter])
+        axes.plot([iter_start, iter_end], [self.real_parameters[parameter], self.real_parameters[parameter]], color="green", alpha=0.7, label="real")
+        axes.legend(loc="upper right", prop={"size": 8}, framealpha=0.5)
+        axes.grid()
+        axes.set_facecolor(self.axes_facecolor)
+
 
     def plot_mcmc_wave_results(self):
         """
@@ -146,6 +157,7 @@ class PlottingWrapper:
         for p in range(ndim):
             self._plot_distribution(axes[indices[p]], parameter=p, xlabel=xlabels[p])
         
+        figure.subplots_adjust(top=0.92)
         return figure, axes
 
     def plot_real_vs_generated(self, title: str = "Real and Estimated Signal", annotation: str = ""):
@@ -190,7 +202,18 @@ class PlottingWrapper:
         axes.annotate(f"$SNR = ${self.snr}", xy=(0.1, 0.1), xycoords="axes fraction")
         
         return figure, axes
-
+    
+    def plot_posterior_traces(self, ylabels, iter_start, iter_end, title: str = "Convergence of Sample Chains"):
+        figure = self._make_figure(title, size=(8, 8), fontsize=14)
+        
+        ndim = self.samples.shape[1]
+        axes = figure.subplots(ndim, 1)
+        
+        for p in range(ndim):
+            self._plot_posterior_trace(axes[p], parameter=p, ylabel=ylabels[p], iter_start=iter_start, iter_end=iter_end)
+        
+        figure.subplots_adjust(bottom=0.08, top=0.92, hspace=0.4)
+        return figure, axes
 
 
 
