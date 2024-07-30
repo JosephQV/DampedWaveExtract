@@ -3,7 +3,7 @@ import sys, time
 import numpy as np
 import matplotlib.pyplot as plt
 from wave_funcs import sine_gaussian_wave
-from utility_funcs import generate_noise, save_figure
+from utility_funcs import generate_noise
 from plotting_funcs import PlottingWrapper
 from emcee_funcs import *
 import multiprocessing
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # emcee parameters
     NDIM = 4
     NWALKERS = 100
-    NUM_ITERATIONS = 10000
+    NUM_ITERATIONS = 15000
     #---------------------------------------------------------------------------------
     
     real_wave = evaluate_wave_fcn(WAVE_FCN, REAL_THETA, WAVE_KWARGS)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # Prior probabilities for the parameters for each walker
     priors = np.random.uniform(low=RANGES[:,0], high=RANGES[:,1], size=(NWALKERS, NDIM))
 
-    processor_pool = multiprocessing.Pool()
+    processor_pool = multiprocessing.Pool(32)
     
     sampler = emcee.EnsembleSampler(
         nwalkers=NWALKERS,
@@ -86,9 +86,10 @@ if __name__ == "__main__":
     
     # ------------- Plotting / Saving ------------------
     save = False
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         if sys.argv[1] == "save":
             save = True
+            outdir = sys.argv[2]
     
     plotter = PlottingWrapper(
         samples=samples,
@@ -99,29 +100,29 @@ if __name__ == "__main__":
         noise=noise,
         snr=SNR
     )
-            
+    
     fig, axes = plotter.plot_sample_distributions(xlabels=["Amplitude", "Angular Frequency", "Mean", "Deviation"])
     if save:
-        save_figure(fig, "SineGaussian/test/SampleDistributions.png")
+        fig.savefig(f"{outdir}/SampleDistributions.png")
     else:
         plt.show()
     
     annotation = f"Real Parameters:\n$A = ${REAL_AMPLITUDE}\n$\\omega = ${REAL_ANGULAR_FREQ}\n$\\mu = ${REAL_MEAN}\n$\\sigma = ${REAL_DEVIATION}"
     fig, axes = plotter.plot_real_vs_generated(annotation=annotation)
     if save:
-        save_figure(fig, "SineGaussian/test/RealVsGenerated.png")
+        fig.savefig(f"{outdir}/RealVsGenerated.png")
     else:
         plt.show()
     
     fig, axes = plotter.plot_signal_in_noise()
     if save:
-        save_figure(fig, "SineGaussian/test/MaskedInNoise.png")
+        fig.savefig(f"{outdir}/MaskedInNoise.png")
     else:
         plt.show()
     
     plotter.samples = sampler.get_chain()[:, np.random.randint(0, NWALKERS)]   # using one of the chains from one random walker for this plot
     fig, axes = plotter.plot_posterior_traces(ylabels=["Amplitude", "Angular Frequency", "Mean", "Deviation"], iter_start=0, iter_end=NUM_ITERATIONS)
     if save:
-        save_figure(fig, "SineGaussian/test/SampleTraces.png")
+        fig.savefig(f"{outdir}/SampleTraces.png")
     else:
         plt.show()
