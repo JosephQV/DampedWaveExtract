@@ -4,12 +4,17 @@ from wave_funcs import *
 
 
 def evaluate_wave_fcn(wave_fcn, theta: np.ndarray, wave_kwargs: dict, return_time: bool = False) -> np.ndarray:
+    if type(wave_fcn) is str:
+        fcn = wave_fcn
+    else:
+        fcn = wave_fcn.__name__
+    
     if return_time == True:
         wave_kwargs.update({"return_time": return_time})
-        time, wave = eval(wave_fcn.__name__)(theta, **wave_kwargs)
+        time, wave = eval(fcn)(theta, **wave_kwargs)
         wave_kwargs.pop("return_time")
         return time, wave
-    return eval(wave_fcn.__name__)(theta, **wave_kwargs)
+    return eval(fcn)(theta, **wave_kwargs)
 
 
 def generate_noise(data: np.ndarray, snr: float) -> np.ndarray:

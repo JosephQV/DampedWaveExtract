@@ -60,50 +60,8 @@ def log_likelihood(theta: np.ndarray, noise: np.ndarray, yerr: float, ranges: np
     return lp + gaussian_likelihood(theta, noise, yerr, wave_fcn, wave_kwargs)
 
 
-def emcee_trial(
-    real: np.ndarray,
-    num_iterations: int,
-    sampler_kwargs: dict,
-    priors: np.ndarray,
-    wave_fcn,
-    wave_kwargs: dict,
-    use_met_hastings: bool = False,
-    met_hastings_kwargs: dict | None = None
-):
-    if use_met_hastings == True:
-        initialize_metropolis_hastings_variables(**met_hastings_kwargs)
-        mh = emcee.moves.MHMove(proposal_function=met_hastings_proposal)
-        sampler = emcee.EnsembleSampler(moves=[(mh, 1.0)])
-    else:
-        sampler = emcee.EnsembleSampler(**sampler_kwargs)
-    
-    samples = run_for_samples(sampler, priors, num_iterations)
-    
-    rms = compare_for_error(real, samples, wave_fcn, wave_kwargs)
-    
-    return samples, rms
-
-
-def run_for_samples(sampler: emcee.EnsembleSampler, priors: np.ndarray, num_iterations: int):
-    state = sampler.run_mcmc(priors, 200)
-    sampler.reset()
-    sampler.run_mcmc(state, num_iterations)
-    return sampler.get_chain(flat=True)
-
-
 def compare_for_error(real_theta: np.ndarray, samples: np.ndarray, wave_fcn, wave_kwargs: dict):
     median_theta = np.median(samples, axis=0)
     real_wave = evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs)
     generated = evaluate_wave_fcn(wave_fcn, median_theta, wave_kwargs)
     return compute_rms(real_wave, generated)
-
-
-def initialize_metropolis_hastings_variables(ranges: np.ndarray, noise: np.ndarray, yerr: float, wave_fcn, wave_kwargs: dict):
-    global RANGES, NOISE, YERR, WAVE_FCN, WAVE_KWARGS
-    
-    RANGES = ranges
-    NOISE = noise
-    YERR = yerr
-    WAVE_FCN = wave_fcn
-    WAVE_KWARGS = wave_kwargs
-    
