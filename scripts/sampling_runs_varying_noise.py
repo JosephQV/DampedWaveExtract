@@ -64,16 +64,6 @@ def initialize_process_sampler(shared_config, snr):
         
     noise = generate_noise(real_wave, snr)
     
-    # initialize_metropolis_hastings_variables(
-    #     ranges=ranges,
-    #     noise=noise,
-    #     yerr=yerr,
-    #     wave_fcn=wave_fcn,
-    #     wave_kwargs=wave_kwargs
-    # )
-    # metropolis_hastings_move = emcee.moves.MHMove(proposal_function=met_hastings_proposal)
-    
-    # Keyword args for the emcee_funcs.log_probability method
     log_prob_kwargs = {
         "noise": noise,
         "yerr": yerr,
@@ -87,7 +77,6 @@ def initialize_process_sampler(shared_config, snr):
         ndim=ndim,
         log_prob_fn=log_likelihood,
         kwargs=log_prob_kwargs,
-        # moves=[(metropolis_hastings_move, 1.0)]
     )
     
     priors = np.random.uniform(low=ranges[:,0], high=ranges[:,1], size=(nwalkers, ndim))

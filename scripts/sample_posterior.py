@@ -1,6 +1,5 @@
 import sys, time, os, json
 import numpy as np
-from wave_funcs import *
 from utility_funcs import generate_noise
 from emcee_funcs import *
 import multiprocessing
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     # Prior probabilities for the parameters for each walker
     priors = np.random.uniform(low=ranges[:,0], high=ranges[:,1], size=(nwalkers, ndim))
 
-    processor_pool = multiprocessing.Pool(32)
+    processor_pool = multiprocessing.Pool(64)
     
     backend = emcee.backends.HDFBackend(
         filename=f"{outdir}/sample_chain.hdf5"
@@ -74,14 +73,46 @@ if __name__ == "__main__":
         store=True
     )
     end = time.time()
-    samples = sampler.get_chain(flat=True, discard=int(niterations * burn_percentage))
-    
-    rms = compare_for_error(real_theta=real_theta, samples=samples, wave_fcn=wave_fcn, wave_kwargs=wave_kwargs)
-    
+    samples = sampler.get_chain(flat=True, thin=thin_by, discard=int(niterations * burn_percentage))
+        
     real_likelihood = gaussian_likelihood(theta=real_theta, noise=noise, yerr=yerr, wave_fcn=wave_fcn, wave_kwargs=wave_kwargs)
     mean_theta_likelihood = gaussian_likelihood(theta=np.mean(samples, axis=0), noise=noise, yerr=yerr, wave_fcn=wave_fcn, wave_kwargs=wave_kwargs)
     median_theta_likelihood = gaussian_likelihood(theta=np.median(samples, axis=0), noise=noise, yerr=yerr, wave_fcn=wave_fcn, wave_kwargs=wave_kwargs)
-
-    print(f"Finished processing MCMC in {end - start:.2f} seconds.\nSamples count: {samples.shape}\tBurn-in Percentage: {burn_percentage*100:.1f}%")
+    
+    best_theta, best_likelihood = get_best_theta(sampler)
+    
+    rms_median = compute_rms(
+        observed=evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs),
+        predicted=evaluate_wave_fcn(wave_fcn, np.median(samples, axis=0), wave_kwargs)
+    )
+    rms_best = compute_rms(
+        observed=evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs),
+        predicted=evaluate_wave_fcn(wave_fcn, best_theta, wave_kwargs)
+    )
+    
+    try:
+        no_thin_autocorr = sampler.get_autocorr_time()
+        thinned_autocorr = sampler.get_autocorr_time(thin=thin_by, discard=burn_percentage)
+    except Exception as e:
+        no_thin_autocorr = "failed"
+        thinned_autocorr = "failed"
+        print(f"Failed to retrieve autocorrelation time estimate: {str(e)}")
+    
+    params["samples size"] = list(samples.shape)
+    params["best likelihood"] = float(best_likelihood)
+    params["best theta"] = list(best_theta)
+    params["autocorrelation"] = thinned_autocorr
+    params["rms"] = rms_best
+    
+    try:
+        with open(f"{outdir}/run_config.json", mode="x") as out_config:
+            json.dump(params, out_config)
+    except Exception as e:
+        print(f"Failed to write run config to file: {str(e)}")
+    
+    print(f"Finished processing MCMC in {end - start:.2f} seconds.\nSamples Size: {samples.shape}\tBurn-in Percentage: {burn_percentage*100:.1f}%\tThinned By: {thin_by}")
     print(f"Likelihoods (real, mean, median thetas): {real_likelihood:.2f}, {mean_theta_likelihood:.2f}, {median_theta_likelihood:.2f}")
-    print(f"RMS Error (Median - Real): {rms}")
+    print(f"Max Likelihood(s): {best_likelihood}")
+    print(f"Best Theta(s): {best_theta}")
+    print(f"RMS Error (Median - Real, Best - Real): {rms_median}, {rms_best}")
+    print(f"Autocorrelation Time (no thinning, with thinning): {no_thin_autocorr}, {thinned_autocorr}")

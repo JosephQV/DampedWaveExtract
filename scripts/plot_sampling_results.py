@@ -1,13 +1,12 @@
 import os, sys, json
-import matplotlib.pyplot as plt
 import emcee
 from plotting_funcs import *
 from utility_funcs import generate_noise
 
 
 if __name__ == "__main__":
-    param_file = sys.argv[1]
-    with open(param_file) as config:
+    run_config = sys.argv[1]
+    with open(run_config) as config:
         params = json.load(config)
         
     samples_file = sys.argv[2]
@@ -26,6 +25,7 @@ if __name__ == "__main__":
     niterations = params["niterations"]
     burn_percentage = params["burn_percentage"]
     thin_by = params["thin_by"]
+    best_theta = params["best theta"]
 
     #---------------------------------------------------------------------------------
     
@@ -53,11 +53,11 @@ if __name__ == "__main__":
     
     plotter = PlottingWrapper(
         samples=samples,
-        single_chain=single_chain,
-        real_parameters=real_theta,
-        param_ranges=ranges,
-        param_names=names,
-        param_labels=labels,
+        real_theta=real_theta,
+        best_theta = best_theta,
+        ranges=ranges,
+        names=names,
+        labels=labels,
         wave_fcn=wave_fcn,
         wave_kwargs=wave_kwargs,
         snr=snr
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     fig, axes = plotter.plot_signal_in_noise()
     fig.savefig(f"{outdir}/MaskedInNoise.png")
     
-    fig, axes = plotter.plot_posterior_traces(iter_start=0, iter_end=niterations)
+    fig, axes = plotter.plot_posterior_traces(single_chain=single_chain, iter_start=0, iter_end=niterations)
     fig.savefig(f"{outdir}/SampleTraces.png")

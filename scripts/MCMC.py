@@ -1,5 +1,6 @@
 import numpy as np
 from utility_funcs import compute_rms, guess_params, evaluate_wave_fcn
+from emcee_funcs import gaussian_likelihood
 
 
 class MCMCModel:
@@ -14,26 +15,36 @@ class MCMCModel:
         likelihood = 1 / (rms_error + tol) 
         return likelihood
 
-    def metropolis_hastings(self, noisy_data: np.ndarray, num_iterations: int) -> np.ndarray:
+    def metropolis_hastings(self, noisy_data: np.ndarray, num_iterations: int, likelihood_fcn: str = "rms") -> np.ndarray:
         current_params = guess_params(param_ranges=self.param_ranges)
-
-        current_likelihood = self.likelihood(noisy_data, current_params)
+        
+        if likelihood_fcn == "gaussian":
+            current_likelihood = gaussian_likelihood(current_params, noisy_data, 1.0, self.wave_fcn, self.wave_kwargs)
+        else:
+            current_likelihood = self.likelihood(noisy_data, current_params)
 
         samples = np.empty(shape=(num_iterations, len(self.param_ranges)))
-        samples[0] = current_params
+        samples[0] = current_params    
+        likelihoods = np.empty(shape=(num_iterations))
+        likelihoods[0] = current_likelihood
         
         for i in range(1, num_iterations):
             proposed_params = guess_params(param_ranges=self.param_ranges)
-            proposed_likelihood = self.likelihood(noisy_data, proposed_params)
-
+            
+            if likelihood_fcn == "gaussian":
+                proposed_likelihood = gaussian_likelihood(proposed_params, noisy_data, 1.0, self.wave_fcn, self.wave_kwargs)
+            else:
+                proposed_likelihood = self.likelihood(noisy_data, proposed_params)
+            
             acceptance_ratio = proposed_likelihood / current_likelihood
-            if acceptance_ratio > np.random.uniform(0.7, 1.0):
+            if acceptance_ratio > np.random.uniform(0.75, 1.0):
                 current_params = proposed_params
                 current_likelihood = proposed_likelihood
 
             samples[i] = current_params
+            likelihoods[i] = current_likelihood
 
-        return samples
+        return samples, likelihoods
     
 
 if __name__ == "__main__":

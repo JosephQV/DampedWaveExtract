@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from utility_funcs import evaluate_wave_fcn, generate_noise
-from emcee_funcs import compare_for_error
+from utility_funcs import evaluate_wave_fcn, generate_noise, compute_rms
 
 
 FACECOLOR = "#e8e1da"
@@ -10,47 +9,42 @@ class PlottingWrapper:
     def __init__(
         self,
         samples: np.ndarray,
-        single_chain: np.ndarray,
-        real_parameters: np.ndarray,
-        param_ranges: np.ndarray,
-        param_names,
-        param_labels,
+        real_theta: np.ndarray,
+        best_theta: np.ndarray,
+        ranges: np.ndarray,
+        names,
+        labels,
         wave_fcn,
         wave_kwargs: dict,
         snr: float
     ):
         self.samples = samples
-        self.single_chain = single_chain
         
-        self.real_parameters = real_parameters
-        self.param_ranges = param_ranges
-        self.param_names = param_names
-        self.param_labels = param_labels
+        self.real_theta = real_theta
+        self.best_theta = best_theta
+        
+        self.ranges = ranges
+        self.names = names
+        self.labels = labels
 
         self.wave_fcn = wave_fcn
         self.wave_kwargs = wave_kwargs
         self.snr = snr
         
-        self.time, self.real_wave = self._get_wave(self.real_parameters, return_time=True)
+        self.time, self.real_wave = evaluate_wave_fcn(self.wave_fcn, self.real_theta, self.wave_kwargs, return_time=True)
         self.noise = generate_noise(self.real_wave, self.snr)
         self.means = np.mean(self.samples, axis=0)
         self.medians = np.median(self.samples, axis=0)
         self.stds = np.std(self.samples, axis=0)
-        self.mean_generated_wave = self._get_wave(self.means)
-        self.median_generated_wave = self._get_wave(self.medians)
+        self.rms = compute_rms(
+            observed=self.real_wave,
+            predicted=evaluate_wave_fcn(self.wave_fcn, self.best_theta, self.wave_kwargs)
+        )
         
         self.axes_facecolor = FACECOLOR
     
-    def _get_wave(self, theta, return_time: bool = False):
-        if return_time == True:
-            self.wave_kwargs.update({"return_time": return_time})
-            time, wave = evaluate_wave_fcn(self.wave_fcn, theta, self.wave_kwargs)
-            self.wave_kwargs.pop("return_time")
-            return time, wave
-        return evaluate_wave_fcn(self.wave_fcn, theta, self.wave_kwargs)
-    
     def _plot_wave(self, axes, theta: np.ndarray, plot_kwargs: dict | None = {}):
-        wave = self._get_wave(theta)
+        wave = evaluate_wave_fcn(self.wave_fcn, theta, self.wave_kwargs)
         axes.plot(self.time, wave, **plot_kwargs)
         
     def _make_figure(self, title, size=(8, 5), fontsize=18):
@@ -58,28 +52,27 @@ class PlottingWrapper:
         figure.suptitle(title, fontsize=fontsize, fontfamily="monospace")
         return figure
         
-    def _plot_distribution(self, axes, parameter: int, xlabel: str):
-        parameter_samples = self.samples[:, parameter]
-        real_parameter = self.real_parameters[parameter]
+    def _plot_distribution(self, axes, parameter: int):
+        trace = self.samples[:, parameter]
+        real = self.real_theta[parameter]
         
         mean = self.means[parameter]
         median = self.medians[parameter]
         std = self.stds[parameter]
         
-        axes.hist(parameter_samples, bins=50, density=True, label="estimated distribution")
-        axes.set_xlabel(xlabel)
-        ylim = axes.get_ylim()
-        axes.plot([real_parameter, real_parameter], [0.0, ylim[1]], label="true value", color="black")
-        axes.plot([median, median], [0.0, ylim[1]], label="sample median", color="green")
-        axes.plot([mean+std, mean+std], [0.0, ylim[1]], "r--", label="+-1 std")
-        axes.plot([mean-std, mean-std], [0.0, ylim[1]], "r--")
+        axes.hist(trace, bins=100, density=True, label="estimated distribution")
+        axes.set_xlabel(self.names[parameter])
+        ybound = axes.get_ybound()
+        axes.plot([real, real], [0.0, ybound[1]], label="true value", color="black")
+        axes.plot([median, median], [0.0, ybound[1]], label="sample median", color="green")
+        axes.plot([mean+std, mean+std], [0.0, ybound[1]], "r--", label="+-1 std")
+        axes.plot([mean-std, mean-std], [0.0, ybound[1]], "r--")
         axes.legend(loc="upper right", prop={"size": 8}, framealpha=0.5)
-        axes.set_xlim(left=self.param_ranges[parameter, 0], right=self.param_ranges[parameter, 1])
+        axes.set_xlim(left=self.ranges[parameter, 0], right=self.ranges[parameter, 1])
 
     def _fill_within_std(self, axes):
-        above = self._get_wave(self.means+self.stds)
-        below = self._get_wave(self.means-self.stds)
-        
+        above = evaluate_wave_fcn(self.wave_fcn, self.means+self.stds, self.wave_kwargs)
+        below = evaluate_wave_fcn(self.wave_fcn, self.means-self.stds, self.wave_kwargs)
         axes.fill_between(self.time, above, below, alpha=0.6, label="within 1 std")
         
     def _plot_waves_within_std(self, axes, num_lines: int = 300):
@@ -99,15 +92,15 @@ class PlottingWrapper:
         
         min_length = min(min_length, num_lines)
         for i in range(min_length):
-            self._plot_wave(axes, thetas_within_std[i], plot_kwargs={"color": "green", "linestyle": "-", "alpha": 0.01})
+            self._plot_wave(axes, thetas_within_std[i], plot_kwargs={"color": "green", "linestyle": "-", "alpha": 0.05})
 
-    def _plot_posterior_trace(self, axes, parameter, trace, ylabel, iter_start, iter_end):
+    def _plot_posterior_trace(self, axes, parameter, trace, iter_start, iter_end):
         x = np.arange(iter_start, iter_end, 1)
-        chain = trace[iter_start:iter_end]
-        axes.plot(x, chain, color="red", label="chain", alpha=0.5)
-        axes.set_ylabel(ylabel, labelpad=2.0)
-        axes.set_ylim(self.param_ranges[parameter])
-        axes.plot([iter_start, iter_end], [self.real_parameters[parameter], self.real_parameters[parameter]], color="green", alpha=0.7, label="real")
+        trace = trace[iter_start:iter_end]
+        axes.plot(x, trace, color="red", label="chain", alpha=0.5)
+        axes.set_ylabel(self.names[parameter], labelpad=2.0)
+        axes.set_ylim(self.ranges[parameter])
+        axes.plot([iter_start, iter_end], [self.real_theta[parameter], self.real_theta[parameter]], color="green", alpha=0.7, label="real")
         axes.legend(loc="upper right", prop={"size": 8}, framealpha=0.5)
         axes.grid()
         axes.set_facecolor(self.axes_facecolor)
@@ -117,33 +110,32 @@ class PlottingWrapper:
         """
         Create a figure with the real and generated data, the noise, and the sample distributions for 3 parameters.
         """
-        figure = plt.figure(figsize=(13, 7), layout="constrained")
-        figure.suptitle("Extracting Signal Parameters From Noise")
+        figure = self._make_figure(title="Extracting Signal Parameters From Noise", size=(16, 10))
         axes = figure.subplot_mosaic(
         """
-        WWN.
-        ABF.
+        WWN
+        ABF
         """,
-        width_ratios=[1, 1, 1, 0.05]
+        subplot_kw={"facecolor": self.axes_facecolor}
         )
 
-        self._plot_distribution(axes["A"], 0, "Amplitude")
-        self._plot_distribution(axes["B"], 1, "Damping")
-        self._plot_distribution(axes["F"], 2, "Angular Frequency")
+        self._plot_distribution(axes["A"], 0)
+        self._plot_distribution(axes["B"], 1)
+        self._plot_distribution(axes["F"], 2)
         
-        self._plot_wave(axes["W"], self.real_parameters, plot_kwargs={"color": "red", "label": "real"})
-        self._plot_wave(axes["W"], self.medians, plot_kwargs={"color": "green", "label": "generated"})        
+        self._plot_wave(axes["W"], self.real_theta, plot_kwargs={"color": "red", "label": "real"})
+        self._plot_wave(axes["W"], self.medians, plot_kwargs={"color": "green", "label": "sample median"})
+        self._plot_wave(axes["W"], self.best_theta, plot_kwargs={"color": "blue", "label": "highest likelihood"})        
         
-        rms_deviation = compare_for_error(self.real_parameters, self.samples, self.wave_fcn, self.wave_kwargs)
-        axes["W"].annotate(f"Real Parameters:\nAmplitude: {self.real_parameters[0]}\nDamping: {self.real_parameters[1]}\nAngular Frequency: {self.real_parameters[2]}\n\nRMS Deviation: {rms_deviation:.3f}", xy=(0.75, 0.60), xycoords="axes fraction")
-        #self._fill_within_std(axes["W"])
-        self._plot_waves_within_std(axes["W"])
+        axes["W"].annotate(f"Amplitude: {self.real_theta[0]}\nDamping: {self.real_theta[1]}\nAngular Frequency: {self.real_theta[2]}\n\nError (RMS): {self.rms:.3f}", xy=(0.75, 0.50), xycoords="axes fraction")
         axes["W"].legend()
         axes["W"].set_xlabel("time")
+        axes["W"].grid()
         axes["N"].plot(self.time, self.noise, label="noise")
         axes["N"].set_xlabel("time")
         axes["N"].legend()
-        axes["N"].annotate(f"$SNR = ${self.snr}", xy=(0.53, 0.9), xycoords="axes fraction")
+        axes["N"].annotate(f"$SNR = ${self.snr}", xy=(0.7, 0.07), xycoords="axes fraction")
+        axes["N"].grid()
         
         return figure, axes
 
@@ -164,7 +156,7 @@ class PlottingWrapper:
         axes = figure.subplots(2, 2, subplot_kw={"facecolor": self.axes_facecolor})
         
         for p in range(ndim):
-            self._plot_distribution(axes[indices[p]], parameter=p, xlabel=self.param_names[p])
+            self._plot_distribution(axes[indices[p]], parameter=p, xlabel=self.names[p])
         
         figure.subplots_adjust(top=0.92)
         return figure, axes
@@ -178,21 +170,17 @@ class PlottingWrapper:
         axes = figure.add_subplot()
         axes.set_xlabel("time")
         axes.set_facecolor(self.axes_facecolor)
-        axes.set_ylim(-1*self.real_parameters[0]*2, self.real_parameters[0]*2)
-        
-        rms_deviation = compare_for_error(real_theta=self.real_parameters, samples=self.samples, wave_fcn=self.wave_fcn, wave_kwargs=self.wave_kwargs)
-        
+        axes.set_ylim(-1*self.real_theta[0]*2, self.real_theta[0]*2)
+                
         annotation = ""
-        for p in range(len(self.param_labels)):
-            annotation += f"{self.param_labels[p]} = {self.real_parameters[p]}\n"
+        for p in range(len(self.labels)):
+            annotation += f"{self.labels[p]} = {self.real_theta[p]}\n"
             
-        annotation += f"\nError (RMS): {rms_deviation:.3f}"
+        annotation += f"\nError (RMS): {self.rms:.3f}"
         axes.annotate(annotation, xy=(0.75, 0.70), xycoords="axes fraction")
         
-        self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real"})
+        self._plot_wave(axes, self.real_theta, plot_kwargs={"color": "red", "label": "real"})
         self._plot_wave(axes, self.medians, plot_kwargs={"color": "green", "label": "sample median", "alpha": 0.4})
-        #self._fill_within_std(axes)
-        #self._plot_waves_within_std(axes)
         axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.5)
         axes.grid()
 
@@ -209,21 +197,23 @@ class PlottingWrapper:
         axes.set_facecolor(self.axes_facecolor)
         
         axes.plot(self.time, self.noise, label="noise")
-        self._plot_wave(axes, self.real_parameters, plot_kwargs={"color": "red", "label": "real", "alpha": 0.5})
+        self._plot_wave(axes, self.real_theta, plot_kwargs={"color": "red", "label": "real", "alpha": 0.5})
         axes.legend(loc="upper left", prop={"size": 10}, framealpha=0.75)
         axes.grid() 
         axes.annotate(f"$SNR = ${self.snr}", xy=(0.1, 0.1), xycoords="axes fraction")
         
         return figure, axes
     
-    def plot_posterior_traces(self, iter_start, iter_end, title: str = "Convergence of Sample Chains"):
+    def plot_posterior_traces(self, single_chain, iter_start=0, iter_end=None, title: str = "Convergence of Sample Chains"):
         figure = self._make_figure(title, size=(8, 8), fontsize=14)
         
         ndim = self.samples.shape[1]
         axes = figure.subplots(ndim, 1)
         
+        if iter_end is None:
+            iter_end = single_chain.shape[0]
         for p in range(ndim):
-            self._plot_posterior_trace(axes[p], parameter=p, trace=self.single_chain[:, p], ylabel=self.param_names[p], iter_start=iter_start, iter_end=iter_end)
+            self._plot_posterior_trace(axes[p], parameter=p, trace=single_chain[:, p], iter_start=iter_start, iter_end=iter_end)
         
         figure.subplots_adjust(bottom=0.08, top=0.92, hspace=0.4)
         return figure, axes

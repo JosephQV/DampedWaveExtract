@@ -65,3 +65,10 @@ def compare_for_error(real_theta: np.ndarray, samples: np.ndarray, wave_fcn, wav
     real_wave = evaluate_wave_fcn(wave_fcn, real_theta, wave_kwargs)
     generated = evaluate_wave_fcn(wave_fcn, median_theta, wave_kwargs)
     return compute_rms(real_wave, generated)
+
+
+def get_best_theta(sampler):
+    i = np.argmax(sampler.get_log_prob(flat=True))
+    best_likelihood = sampler.get_log_prob(flat=True)[i]
+    best_theta = sampler.get_chain(flat=True)[i]
+    return best_theta, best_likelihood
